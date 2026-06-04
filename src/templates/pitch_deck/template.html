@@ -2,1102 +2,542 @@
 <html lang="{{ meta.language }}">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ meta.title }}</title>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  /* ── Reset & Base ─────────────────────────────────────────── */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --w:#ffffff;--b:#0a0a0a;--g50:#f7f7f5;--g100:#efefec;--g200:#d8d8d4;--g500:#8a8a84;
+  --bl:#cfe0f0;--bm:#3a7fc1;--bd:#1a4a7a;
+  --slide-w:794px;--slide-h:446px;
+}
+body{font-family:'DM Sans',sans-serif;background:#f0f0ee;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 
-  :root {
-    --accent:       #7F77DD;
-    --accent-dim:   #534AB7;
-    --accent-glow:  rgba(127,119,221,0.15);
-    --bg:           #0f1117;
-    --bg2:          #151820;
-    --bg3:          #1c1f2b;
-    --surface:      #1e2130;
-    --border:       rgba(255,255,255,0.07);
-    --border-acc:   rgba(127,119,221,0.3);
-    --text:         #ffffff;
-    --text-2:       #a0a4b8;
-    --text-3:       #5a5f78;
-    --green:        #1D9E75;
-    --green-bg:     rgba(29,158,117,0.1);
-    --orange:       #D85A30;
-    --orange-bg:    rgba(216,90,48,0.1);
-    --red:          #E24B4A;
+/* ── SLIDE BASE ── */
+.slide{
+  width:var(--slide-w);height:var(--slide-h);
+  background:var(--w);overflow:hidden;position:relative;
+  page-break-after:always;page-break-inside:avoid;
+}
 
-    --slide-w:      794px;   /* A4 landscape ≈ 794×446 при 96dpi */
-    --slide-h:      446px;
-    --radius:       14px;
-    --radius-sm:    8px;
-  }
+/* ── SHARED ── */
+.tag{display:inline-block;font-size:8px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:3px 10px;border-radius:20px;border:0.5px solid var(--g200);color:var(--g500);margin-bottom:10px}
+.ft{position:absolute;bottom:10px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center}
+.ftb{font-family:'Outfit',sans-serif;font-size:8px;font-weight:700;color:var(--g200);letter-spacing:.04em}
+.ftn{font-size:8px;color:var(--g200)}
+.out{font-family:'Outfit',sans-serif}
 
-  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap');
+/* ══ S1: TITLE ══ */
+.layout-title{display:flex;flex-direction:column;justify-content:space-between;padding:18px 22px 14px}
+.s1-top{display:flex;justify-content:space-between;align-items:center}
+.s1-logo{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;color:var(--b)}
+.s1-logo span{color:var(--bm)}
+.s1-badges{display:flex;gap:5px}
+.s1-badge{font-size:8px;border:0.5px solid var(--g200);border-radius:20px;padding:2px 8px;color:var(--g500)}
+.s1-mid{flex:1;display:flex;flex-direction:column;justify-content:center;padding:10px 0 6px;max-width:55%}
+.s1-eye{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--g500);margin-bottom:5px}
+.s1-h1{font-family:'Outfit',sans-serif;font-size:46px;font-weight:900;color:var(--b);line-height:1;letter-spacing:-.02em;margin-bottom:7px}
+.s1-sub{font-size:11px;color:var(--g500);max-width:280px;line-height:1.4}
+.s1-photos{position:absolute;right:22px;top:18px;bottom:40px;width:148px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3px}
+.s1-p1{border-radius:7px;background:var(--g100);grid-row:span 2}
+.s1-p2{border-radius:7px;background:var(--bl)}
+.s1-p3{border-radius:7px;background:var(--g100)}
+{% if slide_images %}
+.s1-photos-img img{width:100%;height:100%;object-fit:cover;border-radius:7px}
+{% endif %}
+.s1-bottom{display:flex;align-items:center;border-top:0.5px solid var(--g100);padding-top:7px}
+.s1-meta{font-size:8px;color:var(--g500);padding:0 10px;border-right:0.5px solid var(--g200)}
+.s1-meta:first-child{padding-left:0}
+.s1-meta:last-child{border-right:none}
 
-  body {
-    background: var(--bg);
-    font-family: 'DM Sans', sans-serif;
-    color: var(--text);
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+/* ══ S2: PROBLEM ══ */
+.layout-problem{display:flex;flex-direction:column;padding:18px 22px}
+.s2-title{font-family:'Outfit',sans-serif;font-size:24px;font-weight:900;color:var(--b);line-height:1.1;max-width:380px;margin-bottom:5px}
+.s2-sub{font-size:10px;color:var(--g500);max-width:360px;line-height:1.4;margin-bottom:10px}
+.s2-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1}
+.s2c{background:var(--b);border-radius:8px;padding:12px;display:flex;flex-direction:column;justify-content:space-between}
+.s2c-num{font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;color:var(--w);line-height:1;margin-bottom:4px}
+.s2c-lbl{font-size:9px;color:#888;line-height:1.3}
+.s2c-src{font-size:8px;color:#555;margin-top:6px;border-top:0.5px solid #333;padding-top:5px;line-height:1.3}
 
-  /* ── Slide base ───────────────────────────────────────────── */
-  .slide {
-    width: var(--slide-w);
-    height: var(--slide-h);
-    background: var(--bg);
-    overflow: hidden;
-    position: relative;
-    page-break-after: always;
-    page-break-inside: avoid;
-  }
+/* ══ S3: SOLUTION ══ */
+.layout-solution{display:flex}
+.s3l{flex:1;display:flex;flex-direction:column;justify-content:center;padding:18px 22px}
+.s3-h2{font-family:'Outfit',sans-serif;font-size:24px;font-weight:900;color:var(--b);line-height:1.1;margin-bottom:12px}
+.s3-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:9px}
+.s3-num{font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;color:var(--w);background:var(--b);width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.s3-txt{font-size:10px;color:var(--g500);line-height:1.45}
+.s3-txt strong{color:var(--b);font-weight:500}
+.s3r{width:168px;background:var(--g50);border-left:0.5px solid var(--g100);display:flex;flex-direction:column;justify-content:center;padding:14px;gap:7px;flex-shrink:0}
+.s3-stat{background:var(--w);border:0.5px solid var(--g200);border-radius:8px;padding:10px}
+.s3-stat-v{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);line-height:1}
+.s3-stat-l{font-size:8px;color:var(--g500);margin-top:3px;line-height:1.3}
 
-  /* Номер слайда — правый нижний угол */
-  .slide-num {
-    position: absolute;
-    bottom: 18px;
-    right: 24px;
-    font-size: 11px;
-    color: var(--text-3);
-    font-family: 'DM Sans', sans-serif;
-    z-index: 10;
-  }
+/* ══ S4: WHY NOW ══ */
+.layout-why-now{display:flex;flex-direction:column;padding:18px 22px}
+.s4-hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
+.s4-h2{font-family:'Outfit',sans-serif;font-size:30px;font-weight:900;color:var(--b);line-height:1;max-width:200px}
+.s4-desc{font-size:9px;color:var(--g500);max-width:190px;line-height:1.4;text-align:right}
+.s4-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;flex:1}
+.s4i{background:var(--g50);border-radius:8px;padding:11px}
+.s4i-n{font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;color:var(--bm);margin-bottom:4px}
+.s4i-t{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;color:var(--b);margin-bottom:3px;line-height:1.2}
+.s4i-d{font-size:8.5px;color:var(--g500);line-height:1.35}
 
-  /* Логотип — левый нижний угол (все слайды кроме title) */
-  .slide-logo {
-    position: absolute;
-    bottom: 18px;
-    left: 24px;
-    font-size: 11px;
-    color: var(--text-3);
-    font-family: 'Sora', sans-serif;
-    font-weight: 600;
-    letter-spacing: .04em;
-    z-index: 10;
-  }
-  .slide-logo span { color: var(--accent); }
+/* ══ S5: MARKET ══ */
+.layout-market{display:flex;flex-direction:column;padding:18px 22px}
+.s5-hdr{margin-bottom:12px}
+.s5-h2{font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;color:var(--b);line-height:1;margin-bottom:2px}
+.s5-sub{font-size:9px;color:var(--g500)}
+.s5-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1}
+.s5c{border-radius:8px;padding:12px 14px;border:0.5px solid var(--g200);display:flex;flex-direction:column}
+.s5c.tam{background:var(--b);border-color:var(--b)}
+.s5c.sam{background:var(--g50)}
+.s5c.som{background:var(--bl)}
+.s5c-ab{font-family:'Outfit',sans-serif;font-size:8px;font-weight:700;letter-spacing:.1em;margin-bottom:2px}
+.tam .s5c-ab{color:#555}.sam .s5c-ab{color:var(--g500)}.som .s5c-ab{color:var(--bd)}
+.s5c-nm{font-size:8px;margin-bottom:7px}
+.tam .s5c-nm{color:#666}.sam .s5c-nm{color:var(--g500)}.som .s5c-nm{color:var(--bd)}
+.s5c-v{font-family:'Outfit',sans-serif;font-size:28px;font-weight:900;line-height:1;margin-bottom:3px}
+.tam .s5c-v{color:var(--w)}.sam .s5c-v{color:var(--b)}.som .s5c-v{color:var(--bd)}
+.s5c-tr{font-size:8px;padding:2px 6px;border-radius:20px;display:inline-block;margin-bottom:5px}
+.tam .s5c-tr{background:#1f1f1f;color:#888}.sam .s5c-tr{background:var(--g100);color:var(--g500)}.som .s5c-tr{background:#a8cbdf;color:var(--bd)}
+.s5c-src{font-size:8px;border-top:0.5px solid;padding-top:4px;margin-top:auto;line-height:1.3}
+.tam .s5c-src{border-color:#333;color:#555}.sam .s5c-src{border-color:var(--g200);color:var(--g500)}.som .s5c-src{border-color:#a8cbdf;color:var(--bd)}
 
-  /* Тег-бейдж (Проблема / Решение / …) */
-  .tag {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    padding: 4px 12px;
-    border-radius: 20px;
-    margin-bottom: 18px;
-  }
-  .tag-purple { background: rgba(127,119,221,0.12); color: var(--accent); }
-  .tag-orange { background: var(--orange-bg); color: var(--orange); }
-  .tag-green  { background: var(--green-bg);  color: var(--green);  }
-  .tag-gray   { background: rgba(255,255,255,0.05); color: var(--text-2); }
+/* ══ S6: BIZ MODEL ══ */
+.layout-biz-model{display:grid;grid-template-columns:1fr 1fr;height:100%}
+.s6p{display:flex;flex-direction:column;justify-content:center;padding:18px 20px}
+.s6p:first-child{border-right:0.5px solid var(--g100)}
+.s6-lbl{font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--g500);margin-bottom:9px}
+.s6-h{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);margin-bottom:10px;line-height:1.1}
+.s6s{display:flex;align-items:center;gap:7px;margin-bottom:7px;padding:8px 10px;background:var(--g50);border-radius:6px}
+.s6s-d{width:5px;height:5px;border-radius:50%;background:var(--b);flex-shrink:0}
+.s6s-n{font-size:10px;font-weight:500;color:var(--b)}
+.s6s-p{font-size:9px;color:var(--g500);margin-left:auto}
+.s6u{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:0.5px solid var(--g100)}
+.s6u:last-child{border:none}
+.s6u-l{font-size:10px;color:var(--g500)}
+.s6u-v{font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;color:var(--b)}
+.s6u-v.ac{color:var(--bm)}
 
-  /* Горизонтальная линия-разделитель */
-  .divider {
-    width: 32px;
-    height: 2px;
-    background: var(--accent);
-    border-radius: 1px;
-    margin: 14px 0;
-  }
+/* ══ S7: TRACTION ══ */
+.layout-traction{display:flex;flex-direction:column;padding:18px 22px}
+.s7-hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
+.s7-h2{font-family:'Outfit',sans-serif;font-size:30px;font-weight:900;color:var(--b)}
+.s7-desc{font-size:9px;color:var(--g500);max-width:175px;text-align:right;line-height:1.4}
+.s7-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1}
+.s7c{border-radius:8px;padding:13px 15px}
+.s7c:nth-child(1){background:var(--b)}
+.s7c:nth-child(2){background:var(--g50);border:0.5px solid var(--g100)}
+.s7c:nth-child(3){background:var(--bl)}
+.s7-v{font-family:'Outfit',sans-serif;font-size:30px;font-weight:900;line-height:1;margin-bottom:3px}
+.s7c:nth-child(1) .s7-v{color:var(--w)}
+.s7c:nth-child(2) .s7-v{color:var(--b)}
+.s7c:nth-child(3) .s7-v{color:var(--bd)}
+.s7-l{font-size:9px}
+.s7c:nth-child(1) .s7-l{color:#888}
+.s7c:nth-child(2) .s7-l{color:var(--g500)}
+.s7c:nth-child(3) .s7-l{color:var(--bd)}
+.s7-tr{font-size:8px;margin-top:6px;display:inline-block;padding:2px 6px;border-radius:20px}
+.s7c:nth-child(1) .s7-tr{background:#1a1a18;color:#666}
+.s7c:nth-child(2) .s7-tr{background:var(--g100);color:var(--g500)}
+.s7c:nth-child(3) .s7-tr{background:#a8cbdf;color:var(--bd)}
 
-  /* ── Водяной знак ─────────────────────────────────────────── */
-  {% if watermark %}
-  .watermark {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-35deg);
-    font-family: 'Sora', sans-serif;
-    font-size: 72px;
-    font-weight: 700;
-    color: rgba(127,119,221,0.06);
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 100;
-    letter-spacing: .1em;
-  }
-  {% endif %}
+/* ══ S8: COMPETITION ══ */
+.layout-competition{display:flex;flex-direction:column;padding:14px 18px}
+.s8-h2{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);margin-bottom:10px;line-height:1.1}
+.ctbl{width:100%;border-collapse:collapse;border-spacing:0}
+.ctbl colgroup col.ft-col{width:36%}
+.ctbl colgroup col.us-col{width:16%}
+.ctbl colgroup col.cp-col{width:16%}
+.ctbl thead tr th{padding:6px 8px;text-align:center;font-weight:500;color:var(--g500);border-bottom:0.5px solid var(--g200);font-size:9px;white-space:nowrap}
+.ctbl thead tr th.us{background:var(--b);color:var(--w);border-radius:6px 6px 0 0;font-weight:700;font-size:9px}
+.ctbl thead tr th.ft-h{text-align:left}
+.ctbl tbody tr td{padding:7px 8px;text-align:center;border-bottom:0.5px solid var(--g100);font-size:10px;vertical-align:middle}
+.ctbl tbody tr td.ft-td{text-align:left;color:var(--b);font-weight:500;font-size:9px;white-space:nowrap}
+.ctbl tbody tr:last-child td{border-bottom:none}
+.ctbl tbody tr td.us-td{background:var(--g50)}
+.ck{color:var(--b);font-size:12px;font-weight:700}
+.cx{color:var(--g200);font-size:12px}
+.cp{color:var(--g500);font-size:8px}
 
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: TITLE
-  ══════════════════════════════════════════════════════════ */
-  .layout-title {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 52px 64px;
-    background: var(--bg);
-  }
-  /* Геометрический акцент — правый край */
-  .layout-title::after {
-    content: '';
-    position: absolute;
-    right: 0; top: 0;
-    width: 220px; height: 100%;
-    background: linear-gradient(135deg, transparent 40%, rgba(127,119,221,0.05) 100%);
-    border-left: 1px solid var(--border-acc);
-  }
-  .title-eyebrow {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 20px;
-  }
-  .title-h1 {
-    font-family: 'Sora', sans-serif;
-    font-size: 52px;
-    font-weight: 700;
-    line-height: 1.05;
-    color: var(--text);
-    margin-bottom: 16px;
-    max-width: 480px;
-  }
-  .title-h1 .accent { color: var(--accent); }
-  .title-sub {
-    font-size: 15px;
-    color: var(--text-2);
-    line-height: 1.6;
-    max-width: 380px;
-    margin-bottom: 36px;
-  }
-  .title-meta {
-    display: flex;
-    align-items: center;
-    gap: 0;
-  }
-  .title-meta-item {
-    font-size: 12px;
-    color: var(--text-3);
-    padding: 0 16px;
-    border-left: 1px solid var(--border);
-  }
-  .title-meta-item:first-child { padding-left: 0; border-left: none; }
+/* ══ S9: TEAM ══ */
+.layout-team{display:flex;flex-direction:column;padding:14px 18px}
+.s9-h2{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);margin-bottom:11px;line-height:1}
+.s9-grid{display:grid;gap:6px;flex:1}
+.s9-grid-2{grid-template-columns:repeat(2,1fr)}
+.s9-grid-3{grid-template-columns:repeat(3,1fr)}
+.s9-grid-4{grid-template-columns:repeat(4,1fr)}
+.s9c{border:0.5px solid var(--g200);border-radius:8px;padding:10px}
+.s9-av{width:32px;height:32px;border-radius:50%;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:7px}
+.s9-nm{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;color:var(--b);margin-bottom:2px;line-height:1.2}
+.s9-rl{font-size:8px;font-weight:500;color:var(--bm);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.s9-bio{font-size:8.5px;color:var(--g500);line-height:1.35}
 
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: PROBLEM
-  ══════════════════════════════════════════════════════════ */
-  .layout-problem {
-    display: flex;
-    flex-direction: row;
-  }
-  .problem-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 44px 52px;
-  }
-  .problem-h2 {
-    font-family: 'Sora', sans-serif;
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 1.2;
-    color: var(--text);
-    margin-bottom: 14px;
-  }
-  .problem-body {
-    font-size: 14px;
-    color: var(--text-2);
-    line-height: 1.7;
-    margin-bottom: 28px;
-    max-width: 360px;
-  }
-  .problem-stats {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .problem-stat {
-    background: var(--orange-bg);
-    border: 0.5px solid rgba(216,90,48,0.2);
-    border-radius: var(--radius-sm);
-    padding: 12px 16px;
-    min-width: 100px;
-  }
-  .problem-stat-val {
-    font-family: 'Sora', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--orange);
-    display: block;
-    line-height: 1;
-    margin-bottom: 5px;
-  }
-  .problem-stat-label {
-    font-size: 10px;
-    color: var(--text-3);
-    line-height: 1.4;
-  }
-  .problem-aside {
-    width: 220px;
-    background: #0a0d12;
-    border-left: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .problem-aside img {
-    width: 160px;
-    height: 160px;
-    object-fit: cover;
-    border-radius: 50%;
-    opacity: 0.7;
-  }
-  .problem-aside-placeholder {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: var(--orange-bg);
-    border: 1px solid rgba(216,90,48,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 40px;
-    color: var(--orange);
-  }
+/* ══ S10: ROADMAP ══ */
+.layout-roadmap{display:flex;flex-direction:column;padding:18px 22px}
+.s10-h2{font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--b);margin-bottom:16px;line-height:1}
+.tl{position:relative;display:grid;gap:0}
+.tl::before{content:'';position:absolute;top:6px;left:0;right:0;height:0.5px;background:var(--g200)}
+.tli{padding-top:18px;padding-right:8px;position:relative}
+.tld{position:absolute;top:0;left:0;width:12px;height:12px;border-radius:50%;border:2px solid var(--g200);background:var(--w);z-index:1}
+.tld.done{background:var(--b);border-color:var(--b)}
+.tld.now{background:var(--bm);border-color:var(--bm)}
+.tl-dt{font-size:8px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--bm);margin-bottom:3px}
+.tl-tt{font-family:'Outfit',sans-serif;font-size:10px;font-weight:700;color:var(--b);margin-bottom:2px;line-height:1.2}
+.tl-dd{font-size:8.5px;color:var(--g500);line-height:1.35}
+.uf{margin-top:12px;padding-top:10px;border-top:0.5px solid var(--g100)}
+.uf-t{font-size:8px;font-weight:500;color:var(--g500);margin-bottom:6px}
+.uf-bars{display:flex;gap:12px;align-items:center}
+.uf-item{display:flex;align-items:center;gap:4px;font-size:8px;color:var(--g500)}
+.uf-bar{height:3px;border-radius:2px}
 
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: SOLUTION
-  ══════════════════════════════════════════════════════════ */
-  .layout-solution {
-    display: flex;
-    flex-direction: row;
-  }
-  .solution-aside {
-    width: 260px;
-    background: #040a07;
-    border-right: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .solution-aside img {
-    width: 180px;
-    height: 180px;
-    object-fit: cover;
-    border-radius: var(--radius);
-    opacity: 0.85;
-  }
-  .solution-aside-placeholder {
-    width: 110px;
-    height: 110px;
-    border-radius: 20px;
-    background: var(--green-bg);
-    border: 1px solid rgba(29,158,117,0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 50px;
-    color: var(--green);
-  }
-  .solution-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 40px 44px;
-  }
-  .solution-h2 {
-    font-family: 'Sora', sans-serif;
-    font-size: 26px;
-    font-weight: 700;
-    line-height: 1.2;
-    color: var(--text);
-    margin-bottom: 22px;
-  }
-  .solution-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-  .solution-check {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--green-bg);
-    border: 1px solid rgba(29,158,117,0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 2px;
-    font-size: 10px;
-    color: var(--green);
-  }
-  .solution-item-text {
-    font-size: 13px;
-    color: var(--text-2);
-    line-height: 1.55;
-  }
-  .solution-item-text strong {
-    color: var(--text);
-    font-weight: 500;
-  }
+/* ══ S11: CLOSING ══ */
+.layout-closing{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:24px;background:var(--b)}
+.s11-pill{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:#888;border:0.5px solid #333;padding:3px 11px;border-radius:20px;margin-bottom:14px}
+.s11-h1{font-family:'Outfit',sans-serif;font-size:38px;font-weight:900;color:var(--w);line-height:1.05;margin-bottom:8px;letter-spacing:-.02em}
+.s11-ask{font-size:11px;color:#888;margin-bottom:20px}
+.s11-contacts{display:flex;gap:7px;justify-content:center}
+.s11-ct{font-size:9px;color:#555;background:#111;border:0.5px solid #222;padding:4px 12px;border-radius:20px}
+.s11-fb{font-family:'Outfit',sans-serif;font-size:8px;font-weight:700;color:#333;letter-spacing:.04em;margin-top:18px}
 
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: METRICS
-  ══════════════════════════════════════════════════════════ */
-  .layout-metrics {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 44px 52px;
-    background: #0a0c1a;
-  }
-  .metrics-h2 {
-    font-family: 'Sora', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 28px;
-  }
-  .metrics-grid {
-    display: grid;
-    gap: 14px;
-  }
-  .metrics-grid-2 { grid-template-columns: repeat(2, 1fr); }
-  .metrics-grid-3 { grid-template-columns: repeat(3, 1fr); }
-  .metrics-grid-4 { grid-template-columns: repeat(4, 1fr); }
-  .metric-card {
-    background: var(--bg3);
-    border: 0.5px solid rgba(127,119,221,0.15);
-    border-radius: var(--radius-sm);
-    padding: 20px 22px;
-  }
-  .metric-val {
-    font-family: 'Sora', sans-serif;
-    font-size: 36px;
-    font-weight: 700;
-    color: var(--accent);
-    line-height: 1;
-    margin-bottom: 8px;
-  }
-  .metric-label {
-    font-size: 11px;
-    color: var(--text-3);
-    margin-bottom: 8px;
-    line-height: 1.4;
-  }
-  .metric-trend {
-    font-size: 10px;
-    color: var(--green);
-    background: var(--green-bg);
-    padding: 2px 8px;
-    border-radius: 10px;
-    display: inline-block;
-  }
+/* ══ DIAGRAM ══ */
+.layout-diagram{display:flex}
+.diag-l{flex:1;display:flex;flex-direction:column;justify-content:center;padding:18px 22px;max-width:260px}
+.diag-h2{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);margin-bottom:8px}
+.diag-body{font-size:10px;color:var(--g500);line-height:1.5}
+.diag-r{flex:1;background:var(--g50);border-left:0.5px solid var(--g100);display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden}
 
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: BULLETS
-  ══════════════════════════════════════════════════════════ */
-  .layout-bullets {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 44px 64px;
-  }
-  .bullets-h2 {
-    font-family: 'Sora', sans-serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 8px;
-  }
-  .bullets-sub {
-    font-size: 14px;
-    color: var(--text-2);
-    margin-bottom: 28px;
-    line-height: 1.5;
-  }
-  .bullet-list { list-style: none; }
-  .bullet-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 10px 0;
-    border-bottom: 0.5px solid var(--border);
-  }
-  .bullet-item:last-child { border-bottom: none; }
-  .bullet-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    margin-top: 7px;
-    flex-shrink: 0;
-  }
-  .bullet-text {
-    font-size: 14px;
-    color: var(--text-2);
-    line-height: 1.55;
-  }
-  .bullet-text.em { color: var(--text); font-weight: 500; }
+/* ══ WATERMARK ══ */
+{% if watermark %}
+.watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-family:'Outfit',sans-serif;font-size:64px;font-weight:900;color:rgba(0,0,0,0.04);white-space:nowrap;pointer-events:none;z-index:100;letter-spacing:.1em}
+{% endif %}
 
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: TWO_COLUMN
-  ══════════════════════════════════════════════════════════ */
-  .layout-two-column {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    height: 100%;
-  }
-  .col-pane {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 44px 40px;
-  }
-  .col-pane:first-child {
-    border-right: 0.5px solid var(--border);
-  }
-  .col-h3 {
-    font-family: 'Sora', sans-serif;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 14px;
-  }
-  .col-text {
-    font-size: 13px;
-    color: var(--text-2);
-    line-height: 1.65;
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: IMAGE_FULL
-  ══════════════════════════════════════════════════════════ */
-  .layout-image-full {
-    position: relative;
-    display: flex;
-    align-items: flex-end;
-  }
-  .image-full-bg {
-    position: absolute;
-    inset: 0;
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-    opacity: 0.45;
-  }
-  .image-full-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(15,17,23,0.95) 30%, transparent 100%);
-  }
-  .image-full-content {
-    position: relative;
-    z-index: 2;
-    padding: 36px 52px;
-  }
-  .image-full-title {
-    font-family: 'Sora', sans-serif;
-    font-size: 30px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 10px;
-  }
-  .image-full-sub {
-    font-size: 14px;
-    color: var(--text-2);
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: DIAGRAM (Mermaid)
-  ══════════════════════════════════════════════════════════ */
-  .layout-diagram {
-    display: flex;
-    flex-direction: row;
-  }
-  .diagram-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 40px 44px;
-    max-width: 280px;
-  }
-  .diagram-h2 {
-    font-family: 'Sora', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 12px;
-  }
-  .diagram-body {
-    font-size: 13px;
-    color: var(--text-2);
-    line-height: 1.6;
-  }
-  .diagram-pane {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #0a0d16;
-    border-left: 1px solid var(--border);
-    padding: 20px;
-    overflow: hidden;
-  }
-  .diagram-pane .mermaid {
-    max-width: 100%;
-    font-size: 11px;
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: QUOTE
-  ══════════════════════════════════════════════════════════ */
-  .layout-quote {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 52px 80px;
-    text-align: center;
-    background: var(--bg2);
-  }
-  .quote-mark {
-    font-family: 'Sora', sans-serif;
-    font-size: 80px;
-    line-height: 0.6;
-    color: var(--accent);
-    opacity: 0.4;
-    margin-bottom: 20px;
-    font-weight: 700;
-  }
-  .quote-text {
-    font-family: 'Sora', sans-serif;
-    font-size: 20px;
-    font-weight: 500;
-    color: var(--text);
-    line-height: 1.5;
-    max-width: 520px;
-    margin-bottom: 24px;
-  }
-  .quote-author {
-    font-size: 13px;
-    color: var(--text-3);
-  }
-  .quote-author strong {
-    color: var(--text-2);
-    font-weight: 500;
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: TEAM
-  ══════════════════════════════════════════════════════════ */
-  .layout-team {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 36px 52px;
-  }
-  .team-h2 {
-    font-family: 'Sora', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 24px;
-  }
-  .team-grid {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  .team-card {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 18px;
-    flex: 1;
-    min-width: 140px;
-    max-width: 200px;
-  }
-  .team-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-bottom: 10px;
-  }
-  .team-avatar-placeholder {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--accent-glow);
-    border: 1px solid var(--border-acc);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Sora', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--accent);
-    margin-bottom: 10px;
-  }
-  .team-name {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-  .team-role {
-    font-size: 11px;
-    color: var(--text-3);
-    margin-bottom: 8px;
-  }
-  .team-bio {
-    font-size: 11px;
-    color: var(--text-3);
-    line-height: 1.5;
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: TIMELINE
-  ══════════════════════════════════════════════════════════ */
-  .layout-timeline {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 40px 52px;
-  }
-  .timeline-h2 {
-    font-family: 'Sora', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 28px;
-  }
-  .timeline-track {
-    display: flex;
-    gap: 0;
-    position: relative;
-    align-items: flex-start;
-  }
-  .timeline-track::before {
-    content: '';
-    position: absolute;
-    left: 0; right: 0;
-    top: 8px;
-    height: 1px;
-    background: var(--border);
-  }
-  .timeline-item {
-    flex: 1;
-    padding-top: 24px;
-    padding-right: 12px;
-    position: relative;
-  }
-  .timeline-dot {
-    position: absolute;
-    top: 2px;
-    left: 0;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--bg);
-    border: 2px solid var(--accent);
-    z-index: 1;
-  }
-  .timeline-dot.active {
-    background: var(--accent);
-  }
-  .timeline-date {
-    font-size: 10px;
-    color: var(--accent);
-    font-weight: 500;
-    margin-bottom: 5px;
-    letter-spacing: .04em;
-  }
-  .timeline-title {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text);
-    margin-bottom: 4px;
-    line-height: 1.3;
-  }
-  .timeline-desc {
-    font-size: 10px;
-    color: var(--text-3);
-    line-height: 1.5;
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     LAYOUT: CLOSING
-  ══════════════════════════════════════════════════════════ */
-  .layout-closing {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 52px 64px;
-    background: var(--bg);
-    position: relative;
-  }
-  .closing-ring {
-    position: absolute;
-    width: 400px;
-    height: 400px;
-    border-radius: 50%;
-    border: 1px solid var(--border-acc);
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    opacity: 0.3;
-    pointer-events: none;
-  }
-  .closing-ring-2 {
-    position: absolute;
-    width: 600px;
-    height: 600px;
-    border-radius: 50%;
-    border: 1px solid var(--border-acc);
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    opacity: 0.1;
-    pointer-events: none;
-  }
-  .closing-pill {
-    font-size: 10px;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    background: var(--accent-glow);
-    padding: 5px 16px;
-    border-radius: 20px;
-    margin-bottom: 24px;
-    position: relative;
-  }
-  .closing-h1 {
-    font-family: 'Sora', sans-serif;
-    font-size: 38px;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.15;
-    margin-bottom: 12px;
-    position: relative;
-  }
-  .closing-ask {
-    font-size: 14px;
-    color: var(--text-2);
-    margin-bottom: 36px;
-    position: relative;
-  }
-  .closing-contacts {
-    display: flex;
-    gap: 28px;
-    justify-content: center;
-    position: relative;
-  }
-  .closing-contact {
-    font-size: 12px;
-    color: var(--text-3);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .closing-contact-icon {
-    color: var(--accent);
-    font-size: 14px;
-  }
-
-  /* ── Print / PDF ──────────────────────────────────────────── */
-  @media print {
-    body { background: #0f1117; }
-    .slide { page-break-after: always; }
-  }
+@media print{body{background:var(--w)}.slide{page-break-after:always}}
 </style>
 </head>
 <body>
 
-{# Инициализация Mermaid — только если есть diagram-слайды #}
-{% if slides | selectattr('layout', 'equalto', 'diagram') | list %}
-<script>
-  mermaid.initialize({
-    startOnLoad: true,
-    theme: 'dark',
-    themeVariables: {
-      primaryColor: '#1e2130',
-      primaryTextColor: '#a0a4b8',
-      primaryBorderColor: 'rgba(127,119,221,0.3)',
-      lineColor: '#5a5f78',
-      fontSize: '12px'
-    }
-  });
-</script>
+{% if slides | selectattr('layout','equalto','diagram') | list %}
+<script>mermaid.initialize({startOnLoad:true,theme:'neutral',themeVariables:{fontSize:'11px',primaryColor:'#f7f7f5',primaryBorderColor:'#d8d8d4',lineColor:'#8a8a84'}});</script>
 {% endif %}
 
-{# ═══════════════════════════════════════════════════════════
-   СЛАЙДЫ
-═══════════════════════════════════════════════════════════ #}
 {% for slide in slides %}
-<div class="slide layout-{{ slide.layout.value }}">
+<div class="slide layout-{{ slide.layout.value | replace('_','-') }}">
+{% if watermark %}<div class="watermark">FIBONACCI AI</div>{% endif %}
 
-  {# Водяной знак #}
-  {% if watermark %}
-  <div class="watermark">FIBONACCI AI</div>
-  {% endif %}
-
-  {# ── TITLE ────────────────────────────────────────────── #}
-  {% if slide.layout.value == 'title' %}
-    <div class="title-eyebrow">
-      {{ meta.presentation_type.value | replace('_', ' ') | upper }}
-      {% if meta.date %} · {{ meta.date }}{% endif %}
+{# ── TITLE ── #}
+{% if slide.layout.value == 'title' %}
+  <div class="s1-top">
+    <div class="s1-logo">{{ meta.company or 'Fibonacci' }}<span>.</span></div>
+    <div class="s1-badges">
+      <div class="s1-badge">{{ meta.presentation_type.value | replace('_',' ') | title }}</div>
+      {% if meta.date %}<div class="s1-badge">{{ meta.date }}</div>{% endif %}
     </div>
-    <h1 class="title-h1">{{ slide.title | default(meta.title) }}</h1>
+  </div>
+  <div class="s1-mid">
+    <div class="s1-eye">Investor presentation</div>
+    <div class="s1-h1">{{ slide.title or meta.title }}</div>
     {% if slide.subtitle or meta.subtitle %}
-    <p class="title-sub">{{ slide.subtitle | default(meta.subtitle) }}</p>
+    <div class="s1-sub">{{ slide.subtitle or meta.subtitle }}</div>
     {% endif %}
-    <div class="title-meta">
-      {% if meta.author %}
-      <div class="title-meta-item">{{ meta.author }}</div>
-      {% endif %}
-      {% if meta.company %}
-      <div class="title-meta-item">{{ meta.company }}</div>
-      {% endif %}
-    </div>
+  </div>
+  <div class="s1-photos">
+    <div class="s1-p1">{% if slide.image_url %}<img src="{{ slide.image_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">{% endif %}</div>
+    <div class="s1-p2"></div>
+    <div class="s1-p3"></div>
+  </div>
+  <div class="s1-bottom">
+    {% if meta.author %}<div class="s1-meta">{{ meta.author }}</div>{% endif %}
+    {% if meta.company %}<div class="s1-meta">{{ meta.company }}</div>{% endif %}
+  </div>
 
-  {# ── PROBLEM ──────────────────────────────────────────── #}
-  {% elif slide.layout.value == 'problem' %}
-    <div class="problem-content">
-      <div class="tag tag-orange">Проблема</div>
-      <h2 class="problem-h2">{{ slide.title }}</h2>
-      {% if slide.body_text %}
-      <p class="problem-body">{{ slide.body_text }}</p>
-      {% endif %}
-      {% if slide.metrics %}
-      <div class="problem-stats">
-        {% for m in slide.metrics %}
-        <div class="problem-stat">
-          <span class="problem-stat-val">{{ m.value }}</span>
-          <div class="problem-stat-label">{{ m.label }}</div>
-        </div>
-        {% endfor %}
+{# ── PROBLEM ── #}
+{% elif slide.layout.value == 'problem' %}
+  <div class="tag">{{ slide.title or 'Проблема' }}</div>
+  <div class="s2-title">{{ slide.subtitle or slide.title }}</div>
+  {% if slide.body_text %}<div class="s2-sub">{{ slide.body_text }}</div>{% endif %}
+  <div class="s2-cards" style="flex:1">
+    {% for m in slide.metrics %}
+    <div class="s2c">
+      <div>
+        <div class="s2c-num">{{ m.value }}</div>
+        <div class="s2c-lbl">{{ m.label }}</div>
       </div>
-      {% endif %}
+      {% if m.trend %}<div class="s2c-src">{{ m.trend }}</div>{% endif %}
     </div>
-    <div class="problem-aside">
-      {% if slide.image_url %}
-      <img src="{{ slide.image_url }}" alt="{{ slide.title }}">
+    {% endfor %}
+    {% for b in slide.bullets %}
+    <div class="s2c">
+      <div>
+        <div class="s2c-lbl" style="font-size:11px;color:#ccc;line-height:1.4;margin-top:4px">{{ b.text }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{# ── SOLUTION ── #}
+{% elif slide.layout.value == 'solution' %}
+  <div class="s3l">
+    <div class="tag">Решение</div>
+    <div class="s3-h2">{{ slide.title }}</div>
+    {% for bullet in slide.bullets %}
+    <div class="s3-item">
+      <div class="s3-num">{{ loop.index }}</div>
+      <div class="s3-txt">{% if bullet.emphasis %}<strong>{{ bullet.text }}</strong>{% else %}{{ bullet.text }}{% endif %}</div>
+    </div>
+    {% endfor %}
+    {% if slide.body_text and not slide.bullets %}
+    <div class="s3-txt" style="margin-top:8px">{{ slide.body_text }}</div>
+    {% endif %}
+  </div>
+  <div class="s3r">
+    {% for m in slide.metrics %}
+    <div class="s3-stat">
+      <div class="s3-stat-v">{{ m.value }}</div>
+      <div class="s3-stat-l">{{ m.label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{# ── WHY NOW (bullets layout) ── #}
+{% elif slide.layout.value == 'bullets' %}
+  <div class="s4-hdr">
+    <div class="s4-h2">{{ slide.title }}</div>
+    {% if slide.subtitle %}<div class="s4-desc">{{ slide.subtitle }}</div>{% endif %}
+  </div>
+  <div class="s4-grid" style="flex:1">
+    {% for bullet in slide.bullets %}
+    <div class="s4i">
+      <div class="s4i-n">{{ '%02d'|format(loop.index) }}</div>
+      {% if bullet.emphasis %}
+      <div class="s4i-t">{{ bullet.text }}</div>
       {% else %}
-      <div class="problem-aside-placeholder">⚠</div>
+      <div class="s4i-d">{{ bullet.text }}</div>
       {% endif %}
     </div>
+    {% endfor %}
+  </div>
+  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-  {# ── SOLUTION ─────────────────────────────────────────── #}
-  {% elif slide.layout.value == 'solution' %}
-    <div class="solution-aside">
-      {% if slide.image_url %}
-      <img src="{{ slide.image_url }}" alt="{{ slide.title }}">
-      {% else %}
-      <div class="solution-aside-placeholder">✦</div>
-      {% endif %}
+{# ── MARKET ── #}
+{% elif slide.layout.value == 'market' %}
+  <div class="s5-hdr">
+    <div class="s5-h2">{{ slide.title }}</div>
+    {% if slide.subtitle %}<div class="s5-sub">{{ slide.subtitle }}</div>{% endif %}
+  </div>
+  <div class="s5-cards" style="flex:1">
+    {% for m in slide.metrics %}
+    <div class="s5c {{ ['tam','sam','som'][loop.index0] if loop.index0 < 3 else 'sam' }}">
+      <div class="s5c-ab">{{ ['TAM','SAM','SOM'][loop.index0] if loop.index0 < 3 else m.label[:3]|upper }}</div>
+      <div class="s5c-nm">{{ m.label }}</div>
+      <div class="s5c-v">{{ m.value }}</div>
+      {% if m.trend %}<div class="s5c-tr">{{ m.trend }}</div>{% endif %}
+      {% if m.source %}<div class="s5c-src">{{ m.source }}</div>{% endif %}
     </div>
-    <div class="solution-content">
-      <div class="tag tag-green">Решение</div>
-      <h2 class="solution-h2">{{ slide.title }}</h2>
-      {% for bullet in slide.bullets %}
-      <div class="solution-item">
-        <div class="solution-check">✓</div>
-        <div class="solution-item-text">
-          {% if bullet.emphasis %}<strong>{{ bullet.text }}</strong>
-          {% else %}{{ bullet.text }}{% endif %}
-        </div>
-      </div>
-      {% endfor %}
-      {% if slide.body_text and not slide.bullets %}
-      <p style="font-size:14px;color:var(--text-2);line-height:1.65">{{ slide.body_text }}</p>
-      {% endif %}
+    {% endfor %}
+  </div>
+  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{# ── METRICS (traction) ── #}
+{% elif slide.layout.value == 'metrics' %}
+  <div class="s7-hdr">
+    <div class="s7-h2">{{ slide.title }}</div>
+    {% if slide.subtitle %}<div class="s7-desc">{{ slide.subtitle }}</div>{% endif %}
+  </div>
+  {% if slide.body_text and not slide.metrics %}
+  <div style="font-size:11px;color:var(--g500);margin-bottom:12px;line-height:1.5">{{ slide.body_text }}</div>
+  {% endif %}
+  <div class="s7-grid" style="flex:1">
+    {% for m in slide.metrics %}
+    <div class="s7c">
+      <div class="s7-v">{{ m.value }}</div>
+      <div class="s7-l">{{ m.label }}</div>
+      {% if m.trend %}<div class="s7-tr">{{ m.trend }}</div>{% endif %}
     </div>
+    {% endfor %}
+  </div>
+  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-  {# ── METRICS ──────────────────────────────────────────── #}
-  {% elif slide.layout.value == 'metrics' %}
-    <div class="tag tag-purple">{{ slide.title }}</div>
-    {% if slide.subtitle %}
-    <h2 class="metrics-h2">{{ slide.subtitle }}</h2>
-    {% endif %}
-    <div class="metrics-grid metrics-grid-{{ [slide.metrics | length, 4] | min }}">
-      {% for m in slide.metrics %}
-      <div class="metric-card">
-        <div class="metric-val">{{ m.value }}</div>
-        <div class="metric-label">{{ m.label }}</div>
-        {% if m.trend %}
-        <div class="metric-trend">{{ m.trend }}</div>
-        {% endif %}
-      </div>
-      {% endfor %}
-    </div>
-
-  {# ── BULLETS ──────────────────────────────────────────── #}
-  {% elif slide.layout.value == 'bullets' %}
-    <div class="tag tag-purple">{{ slide.index }} / {{ slides | length }}</div>
-    <h2 class="bullets-h2">{{ slide.title }}</h2>
-    {% if slide.subtitle %}
-    <p class="bullets-sub">{{ slide.subtitle }}</p>
-    {% endif %}
-    <ul class="bullet-list">
-      {% for bullet in slide.bullets %}
-      <li class="bullet-item">
-        <div class="bullet-dot"></div>
-        <span class="bullet-text{% if bullet.emphasis %} em{% endif %}">{{ bullet.text }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-
-  {# ── TWO_COLUMN ───────────────────────────────────────── #}
-  {% elif slide.layout.value == 'two_column' %}
+{# ── BIZ MODEL (two_column) ── #}
+{% elif slide.layout.value == 'two_column' %}
+  <div class="s6p">
+    <div class="tag">{{ slide.title or 'Бизнес-модель' }}</div>
+    <div class="s6-h">{% if slide.two_column %}{{ slide.two_column.left_title or 'Потоки дохода' }}{% endif %}</div>
     {% if slide.two_column %}
-    <div class="col-pane">
-      {% if slide.two_column.left_title %}
-      <h3 class="col-h3">{{ slide.two_column.left_title }}</h3>
-      {% endif %}
-      {% if slide.two_column.left_text %}
-      <p class="col-text">{{ slide.two_column.left_text }}</p>
-      {% endif %}
-      {% for b in slide.two_column.left_bullets %}
-      <div class="bullet-item" style="border-bottom:0.5px solid var(--border);padding:8px 0">
-        <div class="bullet-dot"></div>
-        <span class="bullet-text">{{ b.text }}</span>
-      </div>
+    {% for b in slide.two_column.left_bullets %}
+    <div class="s6s">
+      <div class="s6s-d"></div>
+      <div class="s6s-n">{{ b.text }}</div>
+    </div>
+    {% endfor %}
+    {% if slide.two_column.left_text %}
+    <div style="font-size:10px;color:var(--g500);line-height:1.5">{{ slide.two_column.left_text }}</div>
+    {% endif %}
+    {% endif %}
+  </div>
+  <div class="s6p">
+    {% if slide.two_column %}
+    <div class="s6-lbl">{{ slide.two_column.right_title or 'Юнит-экономика' }}</div>
+    {% for b in slide.two_column.right_bullets %}
+    <div class="s6u">
+      <span class="s6u-l">{{ b.text.split(':')[0] if ':' in b.text else b.text }}</span>
+      <span class="s6u-v {% if loop.index == 3 %}ac{% endif %}">{{ b.text.split(':')[1].strip() if ':' in b.text else '' }}</span>
+    </div>
+    {% endfor %}
+    {% if slide.two_column.right_text %}
+    <div style="font-size:10px;color:var(--g500);line-height:1.5;margin-top:8px">{{ slide.two_column.right_text }}</div>
+    {% endif %}
+    {% endif %}
+  </div>
+  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{# ── COMPETITION ── #}
+{% elif slide.layout.value == 'competition' %}
+  <div class="tag">Конкурентный анализ</div>
+  <div class="s8-h2">{{ slide.title }}</div>
+  {% if slide.competition_table %}
+  <table class="ctbl">
+    <colgroup>
+      <col class="ft-col">
+      <col class="us-col">
+      {% for _ in slide.competition_table.competitors %}<col class="cp-col">{% endfor %}
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="ft-h"></th>
+        <th class="us">{{ slide.competition_table.our_name }}</th>
+        {% for comp in slide.competition_table.competitors %}
+        <th>{{ comp.name }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for feature in slide.competition_table.features %}
+      <tr>
+        <td class="ft-td">{{ feature.name }}</td>
+        <td class="us-td"><span class="ck">✓</span></td>
+        {% for comp in slide.competition_table.competitors %}
+        {% set val = feature.values[comp.name] if comp.name in feature.values else '' %}
+        <td>
+          {% if val == 'yes' %}<span class="ck">✓</span>
+          {% elif val == 'no' %}<span class="cx">✗</span>
+          {% else %}<span class="cp">{{ val }}</span>{% endif %}
+        </td>
+        {% endfor %}
+      </tr>
       {% endfor %}
-    </div>
-    <div class="col-pane">
-      {% if slide.two_column.right_title %}
-      <h3 class="col-h3">{{ slide.two_column.right_title }}</h3>
-      {% endif %}
-      {% if slide.two_column.right_text %}
-      <p class="col-text">{{ slide.two_column.right_text }}</p>
-      {% endif %}
-      {% for b in slide.two_column.right_bullets %}
-      <div class="bullet-item" style="border-bottom:0.5px solid var(--border);padding:8px 0">
-        <div class="bullet-dot"></div>
-        <span class="bullet-text">{{ b.text }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
+    </tbody>
+  </table>
+  {% endif %}
+  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-  {# ── IMAGE_FULL ───────────────────────────────────────── #}
-  {% elif slide.layout.value == 'image_full' %}
-    {% if slide.image_url %}
-    <img class="image-full-bg" src="{{ slide.image_url }}" alt="{{ slide.title }}">
-    {% endif %}
-    <div class="image-full-overlay"></div>
-    <div class="image-full-content">
-      {% if slide.title %}
-      <h2 class="image-full-title">{{ slide.title }}</h2>
-      {% endif %}
-      {% if slide.subtitle %}
-      <p class="image-full-sub">{{ slide.subtitle }}</p>
-      {% endif %}
-    </div>
-
-  {# ── DIAGRAM ──────────────────────────────────────────── #}
-  {% elif slide.layout.value == 'diagram' %}
-    <div class="diagram-content">
-      <div class="tag tag-gray">Схема</div>
-      <h2 class="diagram-h2">{{ slide.title }}</h2>
-      {% if slide.body_text %}
-      <p class="diagram-body">{{ slide.body_text }}</p>
-      {% endif %}
-    </div>
-    <div class="diagram-pane">
-      {% if slide.mermaid_code %}
-      <div class="mermaid">{{ slide.mermaid_code }}</div>
-      {% else %}
-      <p style="font-size:12px;color:var(--text-3)">Диаграмма не задана</p>
-      {% endif %}
-    </div>
-
-  {# ── QUOTE ────────────────────────────────────────────── #}
-  {% elif slide.layout.value == 'quote' %}
-    <div class="quote-mark">"</div>
-    <blockquote class="quote-text">{{ slide.body_text }}</blockquote>
-    {% if slide.subtitle %}
-    <div class="quote-author">— <strong>{{ slide.subtitle }}</strong></div>
-    {% endif %}
-
-  {# ── TEAM ─────────────────────────────────────────────── #}
-  {% elif slide.layout.value == 'team' %}
-    <div class="tag tag-purple">Команда</div>
-    <h2 class="team-h2">{{ slide.title }}</h2>
-    <div class="team-grid">
-      {% for member in slide.team_members %}
-      <div class="team-card">
+{# ── TEAM ── #}
+{% elif slide.layout.value == 'team' %}
+  <div class="tag">Команда</div>
+  <div class="s9-h2">{{ slide.title }}</div>
+  <div class="s9-grid s9-grid-{{ [slide.team_members|length, 4]|min }}" style="flex:1">
+    {% for member in slide.team_members %}
+    <div class="s9c">
+      <div class="s9-av">
         {% if member.photo_url %}
-        <img class="team-avatar" src="{{ member.photo_url }}" alt="{{ member.name }}">
-        {% else %}
-        <div class="team-avatar-placeholder">
-          {{ member.name[0] | upper }}{{ member.name.split(' ')[1][0] | upper if ' ' in member.name else '' }}
-        </div>
-        {% endif %}
-        <div class="team-name">{{ member.name }}</div>
-        <div class="team-role">{{ member.role }}</div>
-        {% if member.bio %}
-        <div class="team-bio">{{ member.bio }}</div>
-        {% endif %}
+        <img src="{{ member.photo_url }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
+        {% elif member.gender == 'female' %}👩
+        {% else %}👨{% endif %}
+      </div>
+      <div class="s9-nm">{{ member.name }}</div>
+      <div class="s9-rl">{{ member.role }}</div>
+      {% if member.bio %}<div class="s9-bio">{{ member.bio }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{# ── ROADMAP / TIMELINE ── #}
+{% elif slide.layout.value == 'timeline' %}
+  <div class="tag">Роадмап</div>
+  <div class="s10-h2">{{ slide.title }}</div>
+  <div class="tl" style="grid-template-columns:repeat({{ [slide.timeline_items|length, 6]|min }},1fr)">
+    {% for item in slide.timeline_items %}
+    <div class="tli">
+      <div class="tld {% if loop.first %}done{% elif loop.index == 2 %}now{% endif %}"></div>
+      <div class="tl-dt">{{ item.date }}</div>
+      <div class="tl-tt">{{ item.title }}</div>
+      {% if item.description %}<div class="tl-dd">{{ item.description }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% if slide.body_text %}
+  <div class="uf">
+    <div class="uf-t">Использование инвестиций</div>
+    <div class="uf-bars">
+      {% for line in slide.body_text.split('\n') if line.strip() %}
+      <div class="uf-item">
+        <div class="uf-bar" style="width:{{ [60, 40, 30][loop.index0] if loop.index0 < 3 else 30 }}px;background:{{ ['#0a0a0a','#3a7fc1','#d8d8d4'][loop.index0] if loop.index0 < 3 else '#d8d8d4' }}"></div>
+        {{ line.strip() }}
       </div>
       {% endfor %}
     </div>
-
-  {# ── TIMELINE ─────────────────────────────────────────── #}
-  {% elif slide.layout.value == 'timeline' %}
-    <div class="tag tag-purple">Роадмап</div>
-    <h2 class="timeline-h2">{{ slide.title }}</h2>
-    <div class="timeline-track">
-      {% for item in slide.timeline_items %}
-      <div class="timeline-item">
-        <div class="timeline-dot{% if loop.index == 1 %} active{% endif %}"></div>
-        <div class="timeline-date">{{ item.date }}</div>
-        <div class="timeline-title">{{ item.title }}</div>
-        {% if item.description %}
-        <div class="timeline-desc">{{ item.description }}</div>
-        {% endif %}
-      </div>
-      {% endfor %}
-    </div>
-
-  {# ── CLOSING ──────────────────────────────────────────── #}
-  {% elif slide.layout.value == 'closing' %}
-    <div class="closing-ring"></div>
-    <div class="closing-ring-2"></div>
-    <div class="closing-pill">{{ slide.title | default('Следующий шаг') }}</div>
-    <h2 class="closing-h1">{{ slide.subtitle | default('Давайте строить вместе') }}</h2>
-    {% if slide.body_text %}
-    <p class="closing-ask">{{ slide.body_text }}</p>
-    {% endif %}
-    {% if meta.author or meta.company %}
-    <div class="closing-contacts">
-      {% if meta.author %}
-      <div class="closing-contact">
-        <span class="closing-contact-icon">◈</span>{{ meta.author }}
-      </div>
-      {% endif %}
-      {% if meta.company %}
-      <div class="closing-contact">
-        <span class="closing-contact-icon">◈</span>{{ meta.company }}
-      </div>
-      {% endif %}
-    </div>
-    {% endif %}
-
+  </div>
   {% endif %}
+  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-  {# Номер слайда — все кроме title #}
-  {% if slide.layout.value != 'title' %}
-  <div class="slide-logo">Fibonacci<span>.</span></div>
-  <div class="slide-num">{{ slide.index }} / {{ slides | length }}</div>
-  {% endif %}
+{# ── DIAGRAM ── #}
+{% elif slide.layout.value == 'diagram' %}
+  <div class="diag-l">
+    <div class="tag">Схема</div>
+    <div class="diag-h2">{{ slide.title }}</div>
+    {% if slide.body_text %}<div class="diag-body">{{ slide.body_text }}</div>{% endif %}
+  </div>
+  <div class="diag-r">
+    {% if slide.mermaid_code %}
+    <div class="mermaid" style="font-size:10px">{{ slide.mermaid_code }}</div>
+    {% endif %}
+  </div>
+  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
+{# ── QUOTE ── #}
+{% elif slide.layout.value == 'quote' %}
+  <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;height:100%;background:var(--g50)">
+    <div style="font-family:'Outfit',sans-serif;font-size:60px;line-height:0.6;color:var(--b);opacity:.15;margin-bottom:16px;font-weight:900">"</div>
+    <div style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--b);line-height:1.4;max-width:500px;margin-bottom:20px">{{ slide.body_text }}</div>
+    {% if slide.subtitle %}
+    <div style="font-size:11px;color:var(--g500)">— <strong>{{ slide.subtitle }}</strong></div>
+    {% endif %}
+  </div>
+  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{# ── IMAGE FULL ── #}
+{% elif slide.layout.value == 'image_full' %}
+  <div style="position:relative;height:100%;display:flex;align-items:flex-end">
+    {% if slide.image_url %}
+    <img src="{{ slide.image_url }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.5">
+    {% endif %}
+    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,0.9) 30%,transparent 100%)"></div>
+    <div style="position:relative;z-index:2;padding:20px 24px">
+      {% if slide.title %}<div style="font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;color:#fff;margin-bottom:6px">{{ slide.title }}</div>{% endif %}
+      {% if slide.subtitle %}<div style="font-size:12px;color:#aaa">{{ slide.subtitle }}</div>{% endif %}
+    </div>
+  </div>
+  <div class="ft" style="z-index:3"><div class="ftb" style="color:#444">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn" style="color:#444">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{# ── CLOSING ── #}
+{% elif slide.layout.value == 'closing' %}
+  <div class="s11-pill">{{ slide.title or 'Инвестиционное предложение' }}</div>
+  <div class="s11-h1">{{ slide.subtitle or 'Давайте строить вместе' }}</div>
+  {% if slide.body_text %}<div class="s11-ask">{{ slide.body_text }}</div>{% endif %}
+  <div class="s11-contacts">
+    {% if meta.author %}<div class="s11-ct">{{ meta.author }}</div>{% endif %}
+    {% if meta.company %}<div class="s11-ct">{{ meta.company }}</div>{% endif %}
+  </div>
+  <div class="s11-fb">Fibonacci.</div>
+
+{% endif %}
 </div>
 {% endfor %}
 
