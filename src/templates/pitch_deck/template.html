@@ -11,87 +11,78 @@
 :root{
   --w:#ffffff;--b:#0a0a0a;--g50:#f7f7f5;--g100:#efefec;--g200:#d8d8d4;--g500:#8a8a84;
   --bl:#cfe0f0;--bm:#3a7fc1;--bd:#1a4a7a;
-  --slide-w:794px;--slide-h:446px;
+  --W:794px;--H:446px;
 }
-body{font-family:'DM Sans',sans-serif;background:#f0f0ee;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-
-/* ── SLIDE BASE ── */
-.slide{
-  width:var(--slide-w);height:var(--slide-h);
-  background:var(--w);overflow:hidden;position:relative;
-  page-break-after:always;page-break-inside:avoid;
-}
-
-/* ── SHARED ── */
-.tag{display:inline-block;font-size:8px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:3px 10px;border-radius:20px;border:0.5px solid var(--g200);color:var(--g500);margin-bottom:10px}
-.ft{position:absolute;bottom:10px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center}
+body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.slide{width:var(--W);height:var(--H);background:var(--w);overflow:hidden;position:relative;page-break-after:always;page-break-inside:avoid}
+.tag{display:inline-block;font-size:8px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:3px 10px;border-radius:20px;border:0.5px solid var(--g200);color:var(--g500);margin-bottom:8px}
+.ft{position:absolute;bottom:9px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center}
 .ftb{font-family:'Outfit',sans-serif;font-size:8px;font-weight:700;color:var(--g200);letter-spacing:.04em}
 .ftn{font-size:8px;color:var(--g200)}
-.out{font-family:'Outfit',sans-serif}
+{% if watermark %}
+.wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-family:'Outfit',sans-serif;font-size:64px;font-weight:900;color:rgba(0,0,0,0.04);white-space:nowrap;pointer-events:none;z-index:100;letter-spacing:.1em}
+{% endif %}
 
-/* ══ S1: TITLE ══ */
-.layout-title{display:flex;flex-direction:column;justify-content:space-between;padding:18px 22px 14px}
+/* ══ TITLE ══ */
+.layout-title{padding:18px 22px 14px;display:flex;flex-direction:column;justify-content:space-between;height:var(--H)}
 .s1-top{display:flex;justify-content:space-between;align-items:center}
 .s1-logo{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;color:var(--b)}
 .s1-logo span{color:var(--bm)}
 .s1-badges{display:flex;gap:5px}
 .s1-badge{font-size:8px;border:0.5px solid var(--g200);border-radius:20px;padding:2px 8px;color:var(--g500)}
-.s1-mid{flex:1;display:flex;flex-direction:column;justify-content:center;padding:10px 0 6px;max-width:55%}
+.s1-mid{display:flex;flex-direction:column;justify-content:center;max-width:55%;height:310px}
 .s1-eye{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--g500);margin-bottom:5px}
 .s1-h1{font-family:'Outfit',sans-serif;font-size:46px;font-weight:900;color:var(--b);line-height:1;letter-spacing:-.02em;margin-bottom:7px}
 .s1-sub{font-size:11px;color:var(--g500);max-width:280px;line-height:1.4}
-.s1-photos{position:absolute;right:22px;top:18px;bottom:40px;width:148px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3px}
+.s1-photos{position:absolute;right:22px;top:18px;bottom:38px;width:148px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3px}
 .s1-p1{border-radius:7px;background:var(--g100);grid-row:span 2}
 .s1-p2{border-radius:7px;background:var(--bl)}
 .s1-p3{border-radius:7px;background:var(--g100)}
-{% if slide_images %}
-.s1-photos-img img{width:100%;height:100%;object-fit:cover;border-radius:7px}
-{% endif %}
 .s1-bottom{display:flex;align-items:center;border-top:0.5px solid var(--g100);padding-top:7px}
 .s1-meta{font-size:8px;color:var(--g500);padding:0 10px;border-right:0.5px solid var(--g200)}
 .s1-meta:first-child{padding-left:0}
 .s1-meta:last-child{border-right:none}
 
-/* ══ S2: PROBLEM ══ */
-.layout-problem{display:flex;flex-direction:column;padding:18px 22px}
-.s2-title{font-family:'Outfit',sans-serif;font-size:24px;font-weight:900;color:var(--b);line-height:1.1;max-width:380px;margin-bottom:5px}
+/* ══ PROBLEM ══ */
+.layout-problem{padding:16px 20px 28px;height:var(--H);display:flex;flex-direction:column}
+.s2-title{font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--b);line-height:1.1;max-width:380px;margin-bottom:4px}
 .s2-sub{font-size:10px;color:var(--g500);max-width:360px;line-height:1.4;margin-bottom:10px}
-.s2-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1}
+.s2-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;height:240px}
 .s2c{background:var(--b);border-radius:8px;padding:12px;display:flex;flex-direction:column;justify-content:space-between}
 .s2c-num{font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;color:var(--w);line-height:1;margin-bottom:4px}
-.s2c-lbl{font-size:9px;color:#888;line-height:1.3}
+.s2c-lbl{font-size:9px;color:#999;line-height:1.3}
 .s2c-src{font-size:8px;color:#555;margin-top:6px;border-top:0.5px solid #333;padding-top:5px;line-height:1.3}
 
-/* ══ S3: SOLUTION ══ */
-.layout-solution{display:flex}
-.s3l{flex:1;display:flex;flex-direction:column;justify-content:center;padding:18px 22px}
-.s3-h2{font-family:'Outfit',sans-serif;font-size:24px;font-weight:900;color:var(--b);line-height:1.1;margin-bottom:12px}
-.s3-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:9px}
-.s3-num{font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;color:var(--w);background:var(--b);width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.s3-txt{font-size:10px;color:var(--g500);line-height:1.45}
-.s3-txt strong{color:var(--b);font-weight:500}
-.s3r{width:168px;background:var(--g50);border-left:0.5px solid var(--g100);display:flex;flex-direction:column;justify-content:center;padding:14px;gap:7px;flex-shrink:0}
-.s3-stat{background:var(--w);border:0.5px solid var(--g200);border-radius:8px;padding:10px}
-.s3-stat-v{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);line-height:1}
+/* ══ SOLUTION ══ */
+.layout-solution{height:var(--H);display:flex}
+.s3l{width:560px;display:flex;flex-direction:column;justify-content:center;padding:18px 22px}
+.s3-h2{font-family:'Outfit',sans-serif;font-size:24px;font-weight:900;color:var(--b);line-height:1.1;margin-bottom:14px}
+.s3-item{display:flex;align-items:flex-start;gap:9px;margin-bottom:10px}
+.s3-num{font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;color:var(--w);background:var(--b);width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.s3-txt{font-size:11px;color:var(--g500);line-height:1.5}
+.s3-txt strong{color:var(--b);font-weight:700}
+.s3r{width:234px;background:var(--g50);border-left:0.5px solid var(--g100);display:flex;flex-direction:column;justify-content:center;padding:16px;gap:8px;flex-shrink:0}
+.s3-stat{background:var(--w);border:0.5px solid var(--g200);border-radius:8px;padding:12px}
+.s3-stat-v{font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--b);line-height:1}
 .s3-stat-l{font-size:8px;color:var(--g500);margin-top:3px;line-height:1.3}
 
-/* ══ S4: WHY NOW ══ */
-.layout-why-now{display:flex;flex-direction:column;padding:18px 22px}
+/* ══ BULLETS (WHY NOW) ══ */
+.layout-bullets{padding:16px 20px 28px;height:var(--H);display:flex;flex-direction:column}
 .s4-hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
 .s4-h2{font-family:'Outfit',sans-serif;font-size:30px;font-weight:900;color:var(--b);line-height:1;max-width:200px}
 .s4-desc{font-size:9px;color:var(--g500);max-width:190px;line-height:1.4;text-align:right}
-.s4-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;flex:1}
-.s4i{background:var(--g50);border-radius:8px;padding:11px}
-.s4i-n{font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;color:var(--bm);margin-bottom:4px}
-.s4i-t{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;color:var(--b);margin-bottom:3px;line-height:1.2}
-.s4i-d{font-size:8.5px;color:var(--g500);line-height:1.35}
+.s4-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;height:290px}
+.s4i{background:var(--g50);border-radius:8px;padding:14px}
+.s4i-n{font-family:'Outfit',sans-serif;font-size:10px;font-weight:700;color:var(--bm);margin-bottom:6px}
+.s4i-t{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--b);margin-bottom:5px;line-height:1.2}
+.s4i-d{font-size:9px;color:var(--g500);line-height:1.4}
 
-/* ══ S5: MARKET ══ */
-.layout-market{display:flex;flex-direction:column;padding:18px 22px}
-.s5-hdr{margin-bottom:12px}
+/* ══ MARKET ══ */
+.layout-market{padding:16px 20px 28px;height:var(--H);display:flex;flex-direction:column}
+.s5-hdr{margin-bottom:10px}
 .s5-h2{font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;color:var(--b);line-height:1;margin-bottom:2px}
 .s5-sub{font-size:9px;color:var(--g500)}
-.s5-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1}
+.s5-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;height:300px}
 .s5c{border-radius:8px;padding:12px 14px;border:0.5px solid var(--g200);display:flex;flex-direction:column}
 .s5c.tam{background:var(--b);border-color:var(--b)}
 .s5c.sam{background:var(--g50)}
@@ -102,17 +93,17 @@ body{font-family:'DM Sans',sans-serif;background:#f0f0ee;-webkit-print-color-adj
 .tam .s5c-nm{color:#666}.sam .s5c-nm{color:var(--g500)}.som .s5c-nm{color:var(--bd)}
 .s5c-v{font-family:'Outfit',sans-serif;font-size:28px;font-weight:900;line-height:1;margin-bottom:3px}
 .tam .s5c-v{color:var(--w)}.sam .s5c-v{color:var(--b)}.som .s5c-v{color:var(--bd)}
-.s5c-tr{font-size:8px;padding:2px 6px;border-radius:20px;display:inline-block;margin-bottom:5px}
+.s5c-tr{font-size:8px;padding:2px 6px;border-radius:20px;display:inline-block;margin-bottom:6px}
 .tam .s5c-tr{background:#1f1f1f;color:#888}.sam .s5c-tr{background:var(--g100);color:var(--g500)}.som .s5c-tr{background:#a8cbdf;color:var(--bd)}
-.s5c-src{font-size:8px;border-top:0.5px solid;padding-top:4px;margin-top:auto;line-height:1.3}
+.s5c-src{font-size:8px;border-top:0.5px solid;padding-top:5px;margin-top:auto;line-height:1.35}
 .tam .s5c-src{border-color:#333;color:#555}.sam .s5c-src{border-color:var(--g200);color:var(--g500)}.som .s5c-src{border-color:#a8cbdf;color:var(--bd)}
 
-/* ══ S6: BIZ MODEL ══ */
-.layout-biz-model{display:grid;grid-template-columns:1fr 1fr;height:100%}
+/* ══ TWO COLUMN (BIZ MODEL) ══ */
+.layout-two-column{height:var(--H);display:grid;grid-template-columns:1fr 1fr}
 .s6p{display:flex;flex-direction:column;justify-content:center;padding:18px 20px}
 .s6p:first-child{border-right:0.5px solid var(--g100)}
 .s6-lbl{font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--g500);margin-bottom:9px}
-.s6-h{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);margin-bottom:10px;line-height:1.1}
+.s6-h{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);margin-bottom:12px;line-height:1.1}
 .s6s{display:flex;align-items:center;gap:7px;margin-bottom:7px;padding:8px 10px;background:var(--g50);border-radius:6px}
 .s6s-d{width:5px;height:5px;border-radius:50%;background:var(--b);flex-shrink:0}
 .s6s-n{font-size:10px;font-weight:500;color:var(--b)}
@@ -123,80 +114,80 @@ body{font-family:'DM Sans',sans-serif;background:#f0f0ee;-webkit-print-color-adj
 .s6u-v{font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;color:var(--b)}
 .s6u-v.ac{color:var(--bm)}
 
-/* ══ S7: TRACTION ══ */
-.layout-traction{display:flex;flex-direction:column;padding:18px 22px}
+/* ══ METRICS (TRACTION) ══ */
+.layout-metrics{padding:16px 20px 28px;height:var(--H);display:flex;flex-direction:column}
 .s7-hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
 .s7-h2{font-family:'Outfit',sans-serif;font-size:30px;font-weight:900;color:var(--b)}
 .s7-desc{font-size:9px;color:var(--g500);max-width:175px;text-align:right;line-height:1.4}
-.s7-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1}
-.s7c{border-radius:8px;padding:13px 15px}
+.s7-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;height:280px}
+.s7c{border-radius:8px;padding:16px}
 .s7c:nth-child(1){background:var(--b)}
 .s7c:nth-child(2){background:var(--g50);border:0.5px solid var(--g100)}
 .s7c:nth-child(3){background:var(--bl)}
-.s7-v{font-family:'Outfit',sans-serif;font-size:30px;font-weight:900;line-height:1;margin-bottom:3px}
+.s7-v{font-family:'Outfit',sans-serif;font-size:32px;font-weight:900;line-height:1;margin-bottom:4px}
 .s7c:nth-child(1) .s7-v{color:var(--w)}
 .s7c:nth-child(2) .s7-v{color:var(--b)}
 .s7c:nth-child(3) .s7-v{color:var(--bd)}
-.s7-l{font-size:9px}
+.s7-l{font-size:10px}
 .s7c:nth-child(1) .s7-l{color:#888}
 .s7c:nth-child(2) .s7-l{color:var(--g500)}
 .s7c:nth-child(3) .s7-l{color:var(--bd)}
-.s7-tr{font-size:8px;margin-top:6px;display:inline-block;padding:2px 6px;border-radius:20px}
+.s7-tr{font-size:8px;margin-top:8px;display:inline-block;padding:2px 7px;border-radius:20px}
 .s7c:nth-child(1) .s7-tr{background:#1a1a18;color:#666}
 .s7c:nth-child(2) .s7-tr{background:var(--g100);color:var(--g500)}
 .s7c:nth-child(3) .s7-tr{background:#a8cbdf;color:var(--bd)}
 
-/* ══ S8: COMPETITION ══ */
-.layout-competition{display:flex;flex-direction:column;padding:14px 18px}
+/* ══ COMPETITION ══ */
+.layout-competition{padding:14px 18px 28px;height:var(--H);display:flex;flex-direction:column}
 .s8-h2{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);margin-bottom:10px;line-height:1.1}
-.ctbl{width:100%;border-collapse:collapse;border-spacing:0}
-.ctbl colgroup col.ft-col{width:36%}
-.ctbl colgroup col.us-col{width:16%}
-.ctbl colgroup col.cp-col{width:16%}
-.ctbl thead tr th{padding:6px 8px;text-align:center;font-weight:500;color:var(--g500);border-bottom:0.5px solid var(--g200);font-size:9px;white-space:nowrap}
-.ctbl thead tr th.us{background:var(--b);color:var(--w);border-radius:6px 6px 0 0;font-weight:700;font-size:9px}
-.ctbl thead tr th.ft-h{text-align:left}
-.ctbl tbody tr td{padding:7px 8px;text-align:center;border-bottom:0.5px solid var(--g100);font-size:10px;vertical-align:middle}
-.ctbl tbody tr td.ft-td{text-align:left;color:var(--b);font-weight:500;font-size:9px;white-space:nowrap}
-.ctbl tbody tr:last-child td{border-bottom:none}
-.ctbl tbody tr td.us-td{background:var(--g50)}
-.ck{color:var(--b);font-size:12px;font-weight:700}
-.cx{color:var(--g200);font-size:12px}
+.ctbl{width:100%;border-collapse:collapse}
+.ctbl col.fc{width:36%}
+.ctbl col.uc{width:16%}
+.ctbl col.cc{width:16%}
+.ctbl th{padding:6px 8px;text-align:center;font-weight:500;color:var(--g500);border-bottom:0.5px solid var(--g200);font-size:9px;white-space:nowrap}
+.ctbl th.fh{text-align:left}
+.ctbl th.uh{background:var(--b);color:var(--w);border-radius:6px 6px 0 0;font-weight:700;font-size:9px}
+.ctbl td{padding:7px 8px;text-align:center;border-bottom:0.5px solid var(--g100);font-size:10px;vertical-align:middle}
+.ctbl td.fd{text-align:left;color:var(--b);font-weight:500;font-size:9px;white-space:nowrap}
+.ctbl td.ud{background:var(--g50)}
+.ctbl tr:last-child td{border-bottom:none}
+.ck{color:var(--b);font-size:13px;font-weight:700}
+.cx{color:var(--g200);font-size:13px}
 .cp{color:var(--g500);font-size:8px}
 
-/* ══ S9: TEAM ══ */
-.layout-team{display:flex;flex-direction:column;padding:14px 18px}
-.s9-h2{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);margin-bottom:11px;line-height:1}
-.s9-grid{display:grid;gap:6px;flex:1}
-.s9-grid-2{grid-template-columns:repeat(2,1fr)}
-.s9-grid-3{grid-template-columns:repeat(3,1fr)}
-.s9-grid-4{grid-template-columns:repeat(4,1fr)}
-.s9c{border:0.5px solid var(--g200);border-radius:8px;padding:10px}
+/* ══ TEAM ══ */
+.layout-team{padding:14px 18px 28px;height:var(--H);display:flex;flex-direction:column}
+.s9-h2{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);margin-bottom:10px;line-height:1}
+.s9-grid{display:grid;gap:6px;height:330px}
+.s9g2{grid-template-columns:repeat(2,1fr)}
+.s9g3{grid-template-columns:repeat(3,1fr)}
+.s9g4{grid-template-columns:repeat(4,1fr)}
+.s9c{border:0.5px solid var(--g200);border-radius:8px;padding:11px}
 .s9-av{width:32px;height:32px;border-radius:50%;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:7px}
-.s9-nm{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;color:var(--b);margin-bottom:2px;line-height:1.2}
+.s9-nm{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--b);margin-bottom:2px;line-height:1.2}
 .s9-rl{font-size:8px;font-weight:500;color:var(--bm);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
-.s9-bio{font-size:8.5px;color:var(--g500);line-height:1.35}
+.s9-bio{font-size:9px;color:var(--g500);line-height:1.35}
 
-/* ══ S10: ROADMAP ══ */
-.layout-roadmap{display:flex;flex-direction:column;padding:18px 22px}
+/* ══ TIMELINE ══ */
+.layout-timeline{padding:16px 20px 28px;height:var(--H);display:flex;flex-direction:column}
 .s10-h2{font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--b);margin-bottom:16px;line-height:1}
-.tl{position:relative;display:grid;gap:0}
+.tl{position:relative;display:grid;gap:0;height:160px}
 .tl::before{content:'';position:absolute;top:6px;left:0;right:0;height:0.5px;background:var(--g200)}
 .tli{padding-top:18px;padding-right:8px;position:relative}
 .tld{position:absolute;top:0;left:0;width:12px;height:12px;border-radius:50%;border:2px solid var(--g200);background:var(--w);z-index:1}
 .tld.done{background:var(--b);border-color:var(--b)}
 .tld.now{background:var(--bm);border-color:var(--bm)}
 .tl-dt{font-size:8px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--bm);margin-bottom:3px}
-.tl-tt{font-family:'Outfit',sans-serif;font-size:10px;font-weight:700;color:var(--b);margin-bottom:2px;line-height:1.2}
+.tl-tt{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;color:var(--b);margin-bottom:2px;line-height:1.2}
 .tl-dd{font-size:8.5px;color:var(--g500);line-height:1.35}
-.uf{margin-top:12px;padding-top:10px;border-top:0.5px solid var(--g100)}
-.uf-t{font-size:8px;font-weight:500;color:var(--g500);margin-bottom:6px}
-.uf-bars{display:flex;gap:12px;align-items:center}
-.uf-item{display:flex;align-items:center;gap:4px;font-size:8px;color:var(--g500)}
+.uf{margin-top:14px;padding-top:10px;border-top:0.5px solid var(--g100)}
+.uf-t{font-size:8px;font-weight:500;color:var(--g500);margin-bottom:7px}
+.uf-bars{display:flex;gap:14px;align-items:center}
+.uf-item{display:flex;align-items:center;gap:5px;font-size:8px;color:var(--g500)}
 .uf-bar{height:3px;border-radius:2px}
 
-/* ══ S11: CLOSING ══ */
-.layout-closing{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:24px;background:var(--b)}
+/* ══ CLOSING ══ */
+.layout-closing{height:var(--H);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:24px;background:var(--b)}
 .s11-pill{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:#888;border:0.5px solid #333;padding:3px 11px;border-radius:20px;margin-bottom:14px}
 .s11-h1{font-family:'Outfit',sans-serif;font-size:38px;font-weight:900;color:var(--w);line-height:1.05;margin-bottom:8px;letter-spacing:-.02em}
 .s11-ask{font-size:11px;color:#888;margin-bottom:20px}
@@ -205,16 +196,25 @@ body{font-family:'DM Sans',sans-serif;background:#f0f0ee;-webkit-print-color-adj
 .s11-fb{font-family:'Outfit',sans-serif;font-size:8px;font-weight:700;color:#333;letter-spacing:.04em;margin-top:18px}
 
 /* ══ DIAGRAM ══ */
-.layout-diagram{display:flex}
-.diag-l{flex:1;display:flex;flex-direction:column;justify-content:center;padding:18px 22px;max-width:260px}
-.diag-h2{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);margin-bottom:8px}
-.diag-body{font-size:10px;color:var(--g500);line-height:1.5}
-.diag-r{flex:1;background:var(--g50);border-left:0.5px solid var(--g100);display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+.layout-diagram{height:var(--H);display:flex}
+.dgl{width:250px;display:flex;flex-direction:column;justify-content:center;padding:18px 20px}
+.dg-h2{font-family:'Outfit',sans-serif;font-size:20px;font-weight:900;color:var(--b);margin-bottom:8px}
+.dg-body{font-size:10px;color:var(--g500);line-height:1.5}
+.dgr{flex:1;background:var(--g50);border-left:0.5px solid var(--g100);display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden}
 
-/* ══ WATERMARK ══ */
-{% if watermark %}
-.watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-family:'Outfit',sans-serif;font-size:64px;font-weight:900;color:rgba(0,0,0,0.04);white-space:nowrap;pointer-events:none;z-index:100;letter-spacing:.1em}
-{% endif %}
+/* ══ QUOTE ══ */
+.layout-quote{height:var(--H);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;background:var(--g50)}
+.q-mark{font-family:'Outfit',sans-serif;font-size:60px;line-height:0.6;color:var(--b);opacity:.1;margin-bottom:16px;font-weight:900}
+.q-text{font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--b);line-height:1.4;max-width:500px;margin-bottom:16px}
+.q-author{font-size:11px;color:var(--g500)}
+
+/* ══ IMAGE FULL ══ */
+.layout-image-full{height:var(--H);position:relative;display:flex;align-items:flex-end}
+.if-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.5}
+.if-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,0.9) 30%,transparent 100%)}
+.if-cnt{position:relative;z-index:2;padding:20px 24px}
+.if-t{font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;color:#fff;margin-bottom:6px}
+.if-s{font-size:12px;color:#aaa}
 
 @media print{body{background:var(--w)}.slide{page-break-after:always}}
 </style>
@@ -227,315 +227,328 @@ body{font-family:'DM Sans',sans-serif;background:#f0f0ee;-webkit-print-color-adj
 
 {% for slide in slides %}
 <div class="slide layout-{{ slide.layout.value | replace('_','-') }}">
-{% if watermark %}<div class="watermark">FIBONACCI AI</div>{% endif %}
+{% if watermark %}<div class="wm">FIBONACCI AI</div>{% endif %}
 
-{# ── TITLE ── #}
+{# ══ TITLE ══ #}
 {% if slide.layout.value == 'title' %}
-  <div class="s1-top">
-    <div class="s1-logo">{{ meta.company or 'Fibonacci' }}<span>.</span></div>
-    <div class="s1-badges">
-      <div class="s1-badge">{{ meta.presentation_type.value | replace('_',' ') | title }}</div>
-      {% if meta.date %}<div class="s1-badge">{{ meta.date }}</div>{% endif %}
-    </div>
+<div class="s1-top">
+  <div class="s1-logo">{{ meta.company or 'Fibonacci' }}<span>.</span></div>
+  <div class="s1-badges">
+    <div class="s1-badge">{{ meta.presentation_type.value | replace('_',' ') | title }}</div>
+    {% if meta.date %}<div class="s1-badge">{{ meta.date }}</div>{% endif %}
   </div>
-  <div class="s1-mid">
-    <div class="s1-eye">Investor presentation</div>
-    <div class="s1-h1">{{ slide.title or meta.title }}</div>
-    {% if slide.subtitle or meta.subtitle %}
-    <div class="s1-sub">{{ slide.subtitle or meta.subtitle }}</div>
-    {% endif %}
-  </div>
-  <div class="s1-photos">
-    <div class="s1-p1">{% if slide.image_url %}<img src="{{ slide.image_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">{% endif %}</div>
-    <div class="s1-p2"></div>
-    <div class="s1-p3"></div>
-  </div>
-  <div class="s1-bottom">
-    {% if meta.author %}<div class="s1-meta">{{ meta.author }}</div>{% endif %}
-    {% if meta.company %}<div class="s1-meta">{{ meta.company }}</div>{% endif %}
-  </div>
+</div>
+<div class="s1-mid">
+  <div class="s1-eye">Investor presentation</div>
+  <div class="s1-h1">{{ slide.title or meta.title }}</div>
+  {% if slide.subtitle or meta.subtitle %}
+  <div class="s1-sub">{{ slide.subtitle or meta.subtitle }}</div>
+  {% endif %}
+</div>
+<div class="s1-photos">
+  <div class="s1-p1">{% if slide.image_url %}<img src="{{ slide.image_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">{% endif %}</div>
+  <div class="s1-p2"></div>
+  <div class="s1-p3"></div>
+</div>
+<div class="s1-bottom">
+  {% if meta.author %}<div class="s1-meta">{{ meta.author }}</div>{% endif %}
+  {% if meta.company %}<div class="s1-meta">{{ meta.company }}</div>{% endif %}
+</div>
 
-{# ── PROBLEM ── #}
+{# ══ PROBLEM ══ #}
 {% elif slide.layout.value == 'problem' %}
-  <div class="tag">{{ slide.title or 'Проблема' }}</div>
-  <div class="s2-title">{{ slide.subtitle or slide.title }}</div>
-  {% if slide.body_text %}<div class="s2-sub">{{ slide.body_text }}</div>{% endif %}
-  <div class="s2-cards" style="flex:1">
-    {% for m in slide.metrics %}
-    <div class="s2c">
-      <div>
-        <div class="s2c-num">{{ m.value }}</div>
-        <div class="s2c-lbl">{{ m.label }}</div>
-      </div>
-      {% if m.trend %}<div class="s2c-src">{{ m.trend }}</div>{% endif %}
+<div class="tag">Проблема</div>
+<div class="s2-title">{{ slide.subtitle or slide.title }}</div>
+{% if slide.body_text %}<div class="s2-sub">{{ slide.body_text }}</div>{% endif %}
+<div class="s2-cards">
+  {% for m in slide.metrics %}
+  <div class="s2c">
+    <div>
+      <div class="s2c-num">{{ m.value }}</div>
+      <div class="s2c-lbl">{{ m.label }}</div>
     </div>
-    {% endfor %}
-    {% for b in slide.bullets %}
-    <div class="s2c">
-      <div>
-        <div class="s2c-lbl" style="font-size:11px;color:#ccc;line-height:1.4;margin-top:4px">{{ b.text }}</div>
-      </div>
-    </div>
-    {% endfor %}
+    {% if m.trend or m.source %}
+    <div class="s2c-src">{{ m.source or m.trend }}</div>
+    {% endif %}
   </div>
-  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+  {% endfor %}
+  {% if not slide.metrics %}
+  {% for b in slide.bullets %}
+  <div class="s2c">
+    <div><div class="s2c-lbl" style="font-size:11px;color:#ccc;line-height:1.5">{{ b.text }}</div></div>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-{# ── SOLUTION ── #}
+{# ══ SOLUTION ══ #}
 {% elif slide.layout.value == 'solution' %}
-  <div class="s3l">
-    <div class="tag">Решение</div>
-    <div class="s3-h2">{{ slide.title }}</div>
-    {% for bullet in slide.bullets %}
-    <div class="s3-item">
-      <div class="s3-num">{{ loop.index }}</div>
-      <div class="s3-txt">{% if bullet.emphasis %}<strong>{{ bullet.text }}</strong>{% else %}{{ bullet.text }}{% endif %}</div>
-    </div>
-    {% endfor %}
-    {% if slide.body_text and not slide.bullets %}
-    <div class="s3-txt" style="margin-top:8px">{{ slide.body_text }}</div>
-    {% endif %}
+<div class="s3l">
+  <div class="tag">Решение</div>
+  <div class="s3-h2">{{ slide.title }}</div>
+  {% for bullet in slide.bullets %}
+  <div class="s3-item">
+    <div class="s3-num">{{ loop.index }}</div>
+    <div class="s3-txt">{% if bullet.emphasis %}<strong>{{ bullet.text }}</strong>{% else %}{{ bullet.text }}{% endif %}</div>
   </div>
-  <div class="s3r">
-    {% for m in slide.metrics %}
-    <div class="s3-stat">
-      <div class="s3-stat-v">{{ m.value }}</div>
-      <div class="s3-stat-l">{{ m.label }}</div>
-    </div>
-    {% endfor %}
+  {% endfor %}
+  {% if slide.body_text and not slide.bullets %}
+  <div class="s3-txt" style="margin-top:8px">{{ slide.body_text }}</div>
+  {% endif %}
+</div>
+<div class="s3r">
+  {% for m in slide.metrics %}
+  <div class="s3-stat">
+    <div class="s3-stat-v">{{ m.value }}</div>
+    <div class="s3-stat-l">{{ m.label }}</div>
   </div>
-  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+  {% endfor %}
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-{# ── WHY NOW (bullets layout) ── #}
+{# ══ BULLETS (WHY NOW) ══ #}
 {% elif slide.layout.value == 'bullets' %}
-  <div class="s4-hdr">
-    <div class="s4-h2">{{ slide.title }}</div>
-    {% if slide.subtitle %}<div class="s4-desc">{{ slide.subtitle }}</div>{% endif %}
+<div class="s4-hdr">
+  <div class="s4-h2">{{ slide.title }}</div>
+  {% if slide.subtitle %}<div class="s4-desc">{{ slide.subtitle }}</div>{% endif %}
+</div>
+<div class="s4-grid">
+  {% for bullet in slide.bullets %}
+  <div class="s4i">
+    <div class="s4i-n">{{ '%02d'|format(loop.index) }}</div>
+    {% if bullet.emphasis %}
+    <div class="s4i-t">{{ bullet.text }}</div>
+    {% else %}
+    {% set parts = bullet.text.split(' — ', 1) %}
+    {% if parts|length == 2 %}
+    <div class="s4i-t">{{ parts[0] }}</div>
+    <div class="s4i-d">{{ parts[1] }}</div>
+    {% else %}
+    <div class="s4i-t">{{ bullet.text }}</div>
+    {% endif %}
+    {% endif %}
   </div>
-  <div class="s4-grid" style="flex:1">
-    {% for bullet in slide.bullets %}
-    <div class="s4i">
-      <div class="s4i-n">{{ '%02d'|format(loop.index) }}</div>
-      {% if bullet.emphasis %}
-      <div class="s4i-t">{{ bullet.text }}</div>
-      {% else %}
-      <div class="s4i-d">{{ bullet.text }}</div>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </div>
-  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+  {% endfor %}
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-{# ── MARKET ── #}
+{# ══ MARKET ══ #}
 {% elif slide.layout.value == 'market' %}
-  <div class="s5-hdr">
-    <div class="s5-h2">{{ slide.title }}</div>
-    {% if slide.subtitle %}<div class="s5-sub">{{ slide.subtitle }}</div>{% endif %}
+<div class="s5-hdr">
+  <div class="s5-h2">{{ slide.title }}</div>
+  {% if slide.subtitle %}<div class="s5-sub">{{ slide.subtitle }}</div>{% endif %}
+</div>
+<div class="s5-cards">
+  {% set classes = ['tam','sam','som'] %}
+  {% set labels = ['TAM','SAM','SOM'] %}
+  {% for m in slide.metrics %}
+  <div class="s5c {{ classes[loop.index0] if loop.index0 < 3 else 'sam' }}">
+    <div class="s5c-ab">{{ labels[loop.index0] if loop.index0 < 3 else '' }}</div>
+    <div class="s5c-nm">{{ m.label }}</div>
+    <div class="s5c-v">{{ m.value }}</div>
+    {% if m.trend %}<div class="s5c-tr">{{ m.trend }}</div>{% endif %}
+    {% if m.source %}<div class="s5c-src">{{ m.source }}</div>{% endif %}
   </div>
-  <div class="s5-cards" style="flex:1">
-    {% for m in slide.metrics %}
-    <div class="s5c {{ ['tam','sam','som'][loop.index0] if loop.index0 < 3 else 'sam' }}">
-      <div class="s5c-ab">{{ ['TAM','SAM','SOM'][loop.index0] if loop.index0 < 3 else m.label[:3]|upper }}</div>
-      <div class="s5c-nm">{{ m.label }}</div>
-      <div class="s5c-v">{{ m.value }}</div>
-      {% if m.trend %}<div class="s5c-tr">{{ m.trend }}</div>{% endif %}
-      {% if m.source %}<div class="s5c-src">{{ m.source }}</div>{% endif %}
-    </div>
-    {% endfor %}
-  </div>
-  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+  {% endfor %}
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-{# ── METRICS (traction) ── #}
-{% elif slide.layout.value == 'metrics' %}
-  <div class="s7-hdr">
-    <div class="s7-h2">{{ slide.title }}</div>
-    {% if slide.subtitle %}<div class="s7-desc">{{ slide.subtitle }}</div>{% endif %}
-  </div>
-  {% if slide.body_text and not slide.metrics %}
-  <div style="font-size:11px;color:var(--g500);margin-bottom:12px;line-height:1.5">{{ slide.body_text }}</div>
-  {% endif %}
-  <div class="s7-grid" style="flex:1">
-    {% for m in slide.metrics %}
-    <div class="s7c">
-      <div class="s7-v">{{ m.value }}</div>
-      <div class="s7-l">{{ m.label }}</div>
-      {% if m.trend %}<div class="s7-tr">{{ m.trend }}</div>{% endif %}
-    </div>
-    {% endfor %}
-  </div>
-  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
-
-{# ── BIZ MODEL (two_column) ── #}
+{# ══ TWO COLUMN (BIZ MODEL) ══ #}
 {% elif slide.layout.value == 'two_column' %}
-  <div class="s6p">
-    <div class="tag">{{ slide.title or 'Бизнес-модель' }}</div>
-    <div class="s6-h">{% if slide.two_column %}{{ slide.two_column.left_title or 'Потоки дохода' }}{% endif %}</div>
-    {% if slide.two_column %}
-    {% for b in slide.two_column.left_bullets %}
-    <div class="s6s">
-      <div class="s6s-d"></div>
-      <div class="s6s-n">{{ b.text }}</div>
-    </div>
-    {% endfor %}
-    {% if slide.two_column.left_text %}
-    <div style="font-size:10px;color:var(--g500);line-height:1.5">{{ slide.two_column.left_text }}</div>
-    {% endif %}
-    {% endif %}
+<div class="s6p">
+  <div class="tag">{{ slide.title or 'Бизнес-модель' }}</div>
+  {% if slide.two_column %}
+  <div class="s6-h">{{ slide.two_column.left_title or 'Потоки дохода' }}</div>
+  {% for b in slide.two_column.left_bullets %}
+  <div class="s6s">
+    <div class="s6s-d" style="{% if loop.index == 4 %}background:#3a7fc1{% endif %}"></div>
+    {% set parts = b.text.split(' — ', 1) %}
+    <div class="s6s-n">{{ parts[0] }}</div>
+    {% if parts|length == 2 %}<div class="s6s-p">{{ parts[1] }}</div>{% endif %}
   </div>
-  <div class="s6p">
-    {% if slide.two_column %}
-    <div class="s6-lbl">{{ slide.two_column.right_title or 'Юнит-экономика' }}</div>
-    {% for b in slide.two_column.right_bullets %}
-    <div class="s6u">
-      <span class="s6u-l">{{ b.text.split(':')[0] if ':' in b.text else b.text }}</span>
-      <span class="s6u-v {% if loop.index == 3 %}ac{% endif %}">{{ b.text.split(':')[1].strip() if ':' in b.text else '' }}</span>
-    </div>
-    {% endfor %}
-    {% if slide.two_column.right_text %}
-    <div style="font-size:10px;color:var(--g500);line-height:1.5;margin-top:8px">{{ slide.two_column.right_text }}</div>
-    {% endif %}
-    {% endif %}
+  {% endfor %}
+  {% if slide.two_column.left_text and not slide.two_column.left_bullets %}
+  <div style="font-size:10px;color:var(--g500);line-height:1.5">{{ slide.two_column.left_text }}</div>
+  {% endif %}
+  {% else %}
+  <div class="s6-h">Потоки дохода</div>
+  <div class="s6s"><div class="s6s-d"></div><div class="s6s-n">Starter</div><div class="s6s-p">$9/мес</div></div>
+  <div class="s6s"><div class="s6s-d"></div><div class="s6s-n">Pro</div><div class="s6s-p">$19/мес</div></div>
+  <div class="s6s"><div class="s6s-d"></div><div class="s6s-n">Team</div><div class="s6s-p">$49/мес</div></div>
+  {% endif %}
+</div>
+<div class="s6p">
+  {% if slide.two_column %}
+  <div class="s6-lbl">{{ slide.two_column.right_title or 'Юнит-экономика' }}</div>
+  {% for b in slide.two_column.right_bullets %}
+  {% set parts = b.text.split(': ', 1) %}
+  <div class="s6u">
+    <span class="s6u-l">{{ parts[0] }}</span>
+    <span class="s6u-v {% if loop.index == 3 %}ac{% endif %}">{{ parts[1] if parts|length == 2 else '' }}</span>
   </div>
-  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+  {% endfor %}
+  {% if slide.two_column.right_text and not slide.two_column.right_bullets %}
+  <div style="font-size:10px;color:var(--g500);line-height:1.5;margin-top:8px">{{ slide.two_column.right_text }}</div>
+  {% endif %}
+  {% else %}
+  <div class="s6-lbl">Юнит-экономика</div>
+  <div class="s6u"><span class="s6u-l">CAC</span><span class="s6u-v">—</span></div>
+  <div class="s6u"><span class="s6u-l">LTV</span><span class="s6u-v">—</span></div>
+  <div class="s6u"><span class="s6u-l">LTV/CAC</span><span class="s6u-v ac">—</span></div>
+  {% endif %}
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-{# ── COMPETITION ── #}
+{# ══ METRICS (TRACTION) ══ #}
+{% elif slide.layout.value == 'metrics' %}
+<div class="s7-hdr">
+  <div class="s7-h2">{{ slide.title }}</div>
+  {% if slide.subtitle %}<div class="s7-desc">{{ slide.subtitle }}</div>{% endif %}
+</div>
+<div class="s7-grid">
+  {% for m in slide.metrics %}
+  <div class="s7c">
+    <div class="s7-v">{{ m.value }}</div>
+    <div class="s7-l">{{ m.label }}</div>
+    {% if m.trend %}<div class="s7-tr">{{ m.trend }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{# ══ COMPETITION ══ #}
 {% elif slide.layout.value == 'competition' %}
-  <div class="tag">Конкурентный анализ</div>
-  <div class="s8-h2">{{ slide.title }}</div>
-  {% if slide.competition_table %}
-  <table class="ctbl">
-    <colgroup>
-      <col class="ft-col">
-      <col class="us-col">
-      {% for _ in slide.competition_table.competitors %}<col class="cp-col">{% endfor %}
-    </colgroup>
-    <thead>
-      <tr>
-        <th class="ft-h"></th>
-        <th class="us">{{ slide.competition_table.our_name }}</th>
-        {% for comp in slide.competition_table.competitors %}
-        <th>{{ comp.name }}</th>
-        {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for feature in slide.competition_table.features %}
-      <tr>
-        <td class="ft-td">{{ feature.name }}</td>
-        <td class="us-td"><span class="ck">✓</span></td>
-        {% for comp in slide.competition_table.competitors %}
-        {% set val = feature.values[comp.name] if comp.name in feature.values else '' %}
-        <td>
-          {% if val == 'yes' %}<span class="ck">✓</span>
-          {% elif val == 'no' %}<span class="cx">✗</span>
-          {% else %}<span class="cp">{{ val }}</span>{% endif %}
-        </td>
-        {% endfor %}
-      </tr>
+<div class="tag">Конкурентный анализ</div>
+<div class="s8-h2">{{ slide.title or 'Наши преимущества' }}</div>
+{% if slide.competition_table %}
+<table class="ctbl">
+  <colgroup>
+    <col class="fc">
+    {% for _ in slide.competition_table.competitors %}<col class="cc">{% endfor %}
+    <col class="uc">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="fh"></th>
+      <th class="uh">{{ slide.competition_table.our_name }}</th>
+      {% for comp in slide.competition_table.competitors %}
+      <th>{{ comp.name }}</th>
       {% endfor %}
-    </tbody>
-  </table>
-  {% endif %}
-  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+    </tr>
+  </thead>
+  <tbody>
+    {% for feature in slide.competition_table.features %}
+    <tr>
+      <td class="fd">{{ feature.name }}</td>
+      <td class="ud"><span class="ck">✓</span></td>
+      {% for comp in slide.competition_table.competitors %}
+      {% set val = feature.values.get(comp.name, 'no') %}
+      <td>
+        {% if val == 'yes' %}<span class="ck">✓</span>
+        {% elif val == 'no' %}<span class="cx">✗</span>
+        {% else %}<span class="cp">{{ val }}</span>{% endif %}
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-{# ── TEAM ── #}
+{# ══ TEAM ══ #}
 {% elif slide.layout.value == 'team' %}
-  <div class="tag">Команда</div>
-  <div class="s9-h2">{{ slide.title }}</div>
-  <div class="s9-grid s9-grid-{{ [slide.team_members|length, 4]|min }}" style="flex:1">
-    {% for member in slide.team_members %}
-    <div class="s9c">
-      <div class="s9-av">
-        {% if member.photo_url %}
-        <img src="{{ member.photo_url }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
-        {% elif member.gender == 'female' %}👩
-        {% else %}👨{% endif %}
-      </div>
-      <div class="s9-nm">{{ member.name }}</div>
-      <div class="s9-rl">{{ member.role }}</div>
-      {% if member.bio %}<div class="s9-bio">{{ member.bio }}</div>{% endif %}
+<div class="tag">Команда</div>
+<div class="s9-h2">{{ slide.title }}</div>
+{% set cnt = [slide.team_members|length, 4]|min %}
+<div class="s9-grid s9g{{ cnt }}">
+  {% for member in slide.team_members %}
+  <div class="s9c">
+    <div class="s9-av">
+      {% if member.photo_url %}<img src="{{ member.photo_url }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
+      {% elif member.gender == 'female' %}👩
+      {% else %}👨{% endif %}
     </div>
-    {% endfor %}
+    <div class="s9-nm">{{ member.name }}</div>
+    <div class="s9-rl">{{ member.role }}</div>
+    {% if member.bio %}<div class="s9-bio">{{ member.bio }}</div>{% endif %}
   </div>
-  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+  {% endfor %}
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-{# ── ROADMAP / TIMELINE ── #}
+{# ══ TIMELINE ══ #}
 {% elif slide.layout.value == 'timeline' %}
-  <div class="tag">Роадмап</div>
-  <div class="s10-h2">{{ slide.title }}</div>
-  <div class="tl" style="grid-template-columns:repeat({{ [slide.timeline_items|length, 6]|min }},1fr)">
-    {% for item in slide.timeline_items %}
-    <div class="tli">
-      <div class="tld {% if loop.first %}done{% elif loop.index == 2 %}now{% endif %}"></div>
-      <div class="tl-dt">{{ item.date }}</div>
-      <div class="tl-tt">{{ item.title }}</div>
-      {% if item.description %}<div class="tl-dd">{{ item.description }}</div>{% endif %}
+<div class="tag">Роадмап</div>
+<div class="s10-h2">{{ slide.title }}</div>
+{% set tcols = [slide.timeline_items|length, 6]|min %}
+<div class="tl" style="grid-template-columns:repeat({{ tcols }},1fr)">
+  {% for item in slide.timeline_items %}
+  <div class="tli">
+    <div class="tld {% if loop.first %}done{% elif loop.index == 2 %}now{% endif %}"></div>
+    <div class="tl-dt">{{ item.date }}</div>
+    <div class="tl-tt">{{ item.title }}</div>
+    {% if item.description %}<div class="tl-dd">{{ item.description }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% if slide.body_text %}
+<div class="uf">
+  <div class="uf-t">Использование инвестиций</div>
+  <div class="uf-bars">
+    {% for line in slide.body_text.split('\n') if line.strip() %}
+    <div class="uf-item">
+      <div class="uf-bar" style="width:{{ [64,56,40][loop.index0] if loop.index0 < 3 else 40 }}px;background:{{ ['#0a0a0a','#3a7fc1','#d8d8d4'][loop.index0] if loop.index0 < 3 else '#d8d8d4' }}"></div>
+      {{ line.strip() }}
     </div>
     {% endfor %}
   </div>
-  {% if slide.body_text %}
-  <div class="uf">
-    <div class="uf-t">Использование инвестиций</div>
-    <div class="uf-bars">
-      {% for line in slide.body_text.split('\n') if line.strip() %}
-      <div class="uf-item">
-        <div class="uf-bar" style="width:{{ [60, 40, 30][loop.index0] if loop.index0 < 3 else 30 }}px;background:{{ ['#0a0a0a','#3a7fc1','#d8d8d4'][loop.index0] if loop.index0 < 3 else '#d8d8d4' }}"></div>
-        {{ line.strip() }}
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+</div>
+{% endif %}
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-{# ── DIAGRAM ── #}
+{# ══ DIAGRAM ══ #}
 {% elif slide.layout.value == 'diagram' %}
-  <div class="diag-l">
-    <div class="tag">Схема</div>
-    <div class="diag-h2">{{ slide.title }}</div>
-    {% if slide.body_text %}<div class="diag-body">{{ slide.body_text }}</div>{% endif %}
-  </div>
-  <div class="diag-r">
-    {% if slide.mermaid_code %}
-    <div class="mermaid" style="font-size:10px">{{ slide.mermaid_code }}</div>
-    {% endif %}
-  </div>
-  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+<div class="dgl">
+  <div class="tag">Схема</div>
+  <div class="dg-h2">{{ slide.title }}</div>
+  {% if slide.body_text %}<div class="dg-body">{{ slide.body_text }}</div>{% endif %}
+</div>
+<div class="dgr">
+  {% if slide.mermaid_code %}
+  <div class="mermaid" style="font-size:10px">{{ slide.mermaid_code }}</div>
+  {% endif %}
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-{# ── QUOTE ── #}
+{# ══ QUOTE ══ #}
 {% elif slide.layout.value == 'quote' %}
-  <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:32px;height:100%;background:var(--g50)">
-    <div style="font-family:'Outfit',sans-serif;font-size:60px;line-height:0.6;color:var(--b);opacity:.15;margin-bottom:16px;font-weight:900">"</div>
-    <div style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--b);line-height:1.4;max-width:500px;margin-bottom:20px">{{ slide.body_text }}</div>
-    {% if slide.subtitle %}
-    <div style="font-size:11px;color:var(--g500)">— <strong>{{ slide.subtitle }}</strong></div>
-    {% endif %}
-  </div>
-  <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+<div class="q-mark">"</div>
+<div class="q-text">{{ slide.body_text }}</div>
+{% if slide.subtitle %}<div class="q-author">— <strong>{{ slide.subtitle }}</strong></div>{% endif %}
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
-{# ── IMAGE FULL ── #}
+{# ══ IMAGE FULL ══ #}
 {% elif slide.layout.value == 'image_full' %}
-  <div style="position:relative;height:100%;display:flex;align-items:flex-end">
-    {% if slide.image_url %}
-    <img src="{{ slide.image_url }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.5">
-    {% endif %}
-    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,0.9) 30%,transparent 100%)"></div>
-    <div style="position:relative;z-index:2;padding:20px 24px">
-      {% if slide.title %}<div style="font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;color:#fff;margin-bottom:6px">{{ slide.title }}</div>{% endif %}
-      {% if slide.subtitle %}<div style="font-size:12px;color:#aaa">{{ slide.subtitle }}</div>{% endif %}
-    </div>
-  </div>
-  <div class="ft" style="z-index:3"><div class="ftb" style="color:#444">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn" style="color:#444">{{ slide.index }} / {{ slides|length }}</div></div>
+{% if slide.image_url %}<img class="if-img" src="{{ slide.image_url }}" alt="">{% endif %}
+<div class="if-ov"></div>
+<div class="if-cnt">
+  {% if slide.title %}<div class="if-t">{{ slide.title }}</div>{% endif %}
+  {% if slide.subtitle %}<div class="if-s">{{ slide.subtitle }}</div>{% endif %}
+</div>
+<div class="ft" style="z-index:3"><div class="ftb" style="color:#444">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn" style="color:#444">{{ slide.index }} / {{ slides|length }}</div></div>
 
-{# ── CLOSING ── #}
+{# ══ CLOSING ══ #}
 {% elif slide.layout.value == 'closing' %}
-  <div class="s11-pill">{{ slide.title or 'Инвестиционное предложение' }}</div>
-  <div class="s11-h1">{{ slide.subtitle or 'Давайте строить вместе' }}</div>
-  {% if slide.body_text %}<div class="s11-ask">{{ slide.body_text }}</div>{% endif %}
-  <div class="s11-contacts">
-    {% if meta.author %}<div class="s11-ct">{{ meta.author }}</div>{% endif %}
-    {% if meta.company %}<div class="s11-ct">{{ meta.company }}</div>{% endif %}
-  </div>
-  <div class="s11-fb">Fibonacci.</div>
+<div class="s11-pill">{{ slide.title or 'Инвестиционное предложение' }}</div>
+<div class="s11-h1">{{ slide.subtitle or 'Давайте строить вместе' }}</div>
+{% if slide.body_text %}<div class="s11-ask">{{ slide.body_text }}</div>{% endif %}
+<div class="s11-contacts">
+  {% if meta.author %}<div class="s11-ct">{{ meta.author }}</div>{% endif %}
+  {% if meta.company %}<div class="s11-ct">{{ meta.company }}</div>{% endif %}
+</div>
+<div class="s11-fb">Fibonacci.</div>
 
 {% endif %}
 </div>
