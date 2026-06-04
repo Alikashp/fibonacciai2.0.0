@@ -152,11 +152,12 @@ class PDFRenderer:
             if has_mermaid:
                 await self._wait_for_mermaid(page)
 
+
             # Генерируем PDF
-            pdf_bytes = await page.pdf(
-                format="A4",
-                landscape=True,
-                print_background=True,   # Критично — без этого тёмный фон пропадёт
+          pdf_bytes = await page.pdf(
+                width="794px",
+                height="446px",
+                print_background=True,
                 margin={
                     "top": "0",
                     "right": "0",
