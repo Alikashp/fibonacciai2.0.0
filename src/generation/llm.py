@@ -23,10 +23,13 @@ from schemas.presentation import (
     AudienceType,
 )
 
+from config import settings
+
 logger = logging.getLogger(__name__)
-
-client = AsyncOpenAI()  # Читает OPENAI_API_KEY из env
-
+client = AsyncOpenAI(
+    api_key=settings.openai_api_key,
+    base_url=settings.openai_base_url,
+)
 
 # ─── Системный промпт ─────────────────────────────────────────────────────────
 
@@ -266,16 +269,16 @@ async def generate_presentation_structure(
         },
     )
 
-    response = await client.chat.completions.create(
-        model="gpt-4o",
-        temperature=0.7,
-        max_tokens=4000,
-        response_format={"type": "json_object"},  # Гарантирует валидный JSON
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
+   response = await client.chat.completions.create(
+            model=settings.openai_model,
+            temperature=0.7,
+            max_tokens=4000,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
 
     raw_json = response.choices[0].message.content
 
