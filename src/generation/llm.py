@@ -40,12 +40,12 @@ SYSTEM_PROMPT = """\
 
 СТРУКТУРА ПИТЧ-ДЕКА (строго 11 слайдов):
 1. title — название, подзаголовок. ОБЯЗАТЕЛЬНО поставь image_query — фото для фона (на английском, например: "modern medical clinic reception" или "healthy lifestyle nature")
-2. problem — layout="problem", ОБЯЗАТЕЛЬНО metrics с 2-3 цифрами + источниками
-3. solution — layout="solution", bullets с преимуществами + metrics с результатами
-4. why_now — layout="bullets", 4 тренда почему сейчас идеальное время
+2. problem — layout="problem", title = реальный заголовок проблемы (НЕ просто "Проблема"), subtitle = одно предложение описания. ОБЯЗАТЕЛЬНО metrics с 2-3 цифрами + источниками
+3. solution — layout="solution", title = реальный заголовок решения (НЕ просто "Решение"), subtitle = одно предложение. bullets с преимуществами + metrics с результатами
+4. why_now — layout="bullets", 4 тренда. title = "Почему сейчас?", subtitle = одно предложение контекста. bullets: каждый пункт формат "Название тренда — объяснение в 1-2 предложения"
 5. market — layout="market", 3 метрики TAM/SAM/SOM с источниками и расчётами
 6. biz_model — layout="two_column", потоки дохода + юнит-экономика (CAC, LTV, LTV/CAC)
-7. traction — layout="metrics", 3 ключевые метрики роста
+7. traction — layout="metrics", 3 ключевые метрики роста. title = "Трекшн"
 8. competition — layout="competition", таблица сравнения с конкурентами
 9. team — layout="team", 3-4 члена команды с gender (male/female) по имени
 10. roadmap — layout="timeline", 4 этапа + body_text с распределением инвестиций
