@@ -39,7 +39,7 @@ SYSTEM_PROMPT = """\
 - НЕ пиши [ЦИФРА] — лучше реалистичный диапазон "$5-15B".
 
 СТРУКТУРА ПИТЧ-ДЕКА (строго 11 слайдов):
-1. title — название, подзаголовок
+1. title — название, подзаголовок. ОБЯЗАТЕЛЬНО поставь image_query — фото для фона (на английском, например: "modern medical clinic reception" или "healthy lifestyle nature")
 2. problem — layout="problem", ОБЯЗАТЕЛЬНО metrics с 2-3 цифрами + источниками
 3. solution — layout="solution", bullets с преимуществами + metrics с результатами
 4. why_now — layout="bullets", 4 тренда почему сейчас идеальное время
