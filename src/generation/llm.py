@@ -1,14 +1,3 @@
-"""
-LLM-слой: генерация структуры презентации.
-
-Архитектурные решения:
-1. Промпт возвращает ТОЛЬКО JSON — никаких "конечно, вот ваша презентация:"
-2. Используем structured output через response_format (если модель поддерживает)
-   Если нет — парсим JSON из текста с fallback
-3. Температура 0.7 — баланс между креативностью и предсказуемостью структуры
-4. Retry 3 раза с экспоненциальным backoff — LLM иногда возвращает битый JSON
-"""
-
 import json
 import logging
 from string import Template
@@ -16,6 +5,7 @@ from string import Template
 from openai import AsyncOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from config import settings
 from schemas.presentation import (
     PresentationSchema,
     UserRequest,
@@ -23,15 +13,12 @@ from schemas.presentation import (
     AudienceType,
 )
 
-from config import settings
-
 logger = logging.getLogger(__name__)
+
 client = AsyncOpenAI(
     api_key=settings.openai_api_key,
     base_url=settings.openai_base_url,
 )
-
-# ─── Системный промпт ─────────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = """\
 Ты — эксперт по созданию профессиональных презентаций.
@@ -42,15 +29,13 @@ SYSTEM_PROMPT = """\
 2. JSON должен строго соответствовать предоставленной схеме.
 3. Первый слайд ВСЕГДА layout="title", последний ВСЕГДА layout="closing".
 4. image_query — поисковый запрос на английском языке для стоковых фото (Unsplash/Pexels).
-   Пример хорошего запроса: "diverse startup team brainstorming office"
-   Пример плохого запроса: "картинка для слайда про команду"
 5. mermaid_code — только для layout="diagram". Используй только валидный Mermaid-синтаксис.
 6. bullets.text — конкретно и ёмко, максимум 15 слов на пункт.
 7. metrics.value — только число или короткое значение: "2.5M", "$10K", "94%", "x3".
-8. Не выдумывай конкретные цифры если пользователь не указал — используй реалистичные плейсхолдеры вида "[ЦИФРА]".
+8. Не выдумывай конкретные цифры если пользователь не указал — используй плейсхолдеры вида "[ЦИФРА]".
 9. speaker_notes — краткие подсказки докладчику, 1-2 предложения.
 
-ТИПЫ СЛАЙДОВ И КОГДА ИСПОЛЬЗОВАТЬ:
+ТИПЫ СЛАЙДОВ:
 - title: только первый слайд
 - problem: описание проблемы, боли рынка
 - solution: как продукт решает проблему
@@ -67,9 +52,6 @@ SYSTEM_PROMPT = """\
 СХЕМА JSON:
 {schema}
 """
-
-
-# ─── Пользовательский промпт ──────────────────────────────────────────────────
 
 USER_PROMPT_TEMPLATE = Template("""\
 Создай презентацию со следующими параметрами:
@@ -90,92 +72,53 @@ $audience_context
 Сгенерируй $slide_count_hint слайдов. Верни только JSON.
 """)
 
-
-# ─── Контекстные подсказки по типу и аудитории ────────────────────────────────
-
 TYPE_CONTEXTS: dict[PresentationType, str] = {
     PresentationType.PITCH_DECK: (
         "Это питч для инвесторов. Структура: проблема → решение → рынок → "
-        "бизнес-модель → тракшн → команда → финансовый план → призыв к инвестиции. "
-        "Акцент на цифрах, рынке, уникальности."
+        "бизнес-модель → тракшн → команда → финансовый план → призыв к инвестиции."
     ),
     PresentationType.DIPLOMA: (
-        "Это защита дипломной/курсовой работы. Структура: тема и актуальность → "
-        "цель и задачи → обзор литературы → методология → результаты → "
-        "выводы → список источников. Академический стиль, строгость."
+        "Защита дипломной работы. Структура: тема и актуальность → цель и задачи → "
+        "методология → результаты → выводы. Академический стиль."
     ),
     PresentationType.CORP_REPORT: (
         "Корпоративный отчёт для руководства. Структура: резюме периода → "
-        "ключевые метрики → выполнение плана → проблемы и решения → "
-        "планы на следующий период. Данные и факты, минимум воды."
+        "ключевые метрики → выполнение плана → проблемы → планы. Данные и факты."
     ),
     PresentationType.EDUCATIONAL: (
-        "Обучающая презентация. Структура: введение в тему → "
-        "ключевые концепции (по одному на слайд) → примеры → практика → "
-        "резюме → вопросы. Простой язык, много примеров, логическая прогрессия."
+        "Обучающая презентация. Структура: введение → ключевые концепции → "
+        "примеры → практика → резюме. Простой язык, логическая прогрессия."
     ),
     PresentationType.SALES: (
-        "Коммерческое предложение. Структура: боль клиента → наше решение → "
-        "преимущества → кейсы/результаты → условия и цены → следующий шаг. "
-        "Фокус на выгодах для клиента, конкретные результаты."
+        "Коммерческое предложение. Структура: боль клиента → решение → "
+        "преимущества → кейсы → условия и цены → следующий шаг."
     ),
     PresentationType.CONFERENCE: (
-        "Доклад на конференции. Структура: тезис доклада → контекст → "
-        "основные идеи (3-5 ключевых пунктов) → доказательства → "
-        "выводы → дискуссия. Запоминающееся начало и конец."
+        "Доклад на конференции. Структура: тезис → контекст → "
+        "ключевые идеи → доказательства → выводы."
     ),
     PresentationType.ROADMAP: (
-        "Стратегия и роадмап. Структура: текущее состояние → стратегические цели → "
-        "приоритеты → план по кварталам/годам → ресурсы → риски → "
-        "ожидаемые результаты. Timeline-слайды обязательны."
+        "Стратегия и роадмап. Структура: текущее состояние → цели → "
+        "приоритеты → план по кварталам → ресурсы → результаты."
     ),
 }
 
 AUDIENCE_CONTEXTS: dict[AudienceType, str] = {
-    AudienceType.INVESTORS: (
-        "Инвесторы хотят видеть: размер рынка, бизнес-модель, тракшн, команду, "
-        "конкурентные преимущества, финансовые прогнозы. "
-        "Говори языком ROI и масштабируемости."
-    ),
-    AudienceType.CLIENTS: (
-        "Клиенты хотят понять: как это решает их проблему, сколько стоит, "
-        "каков результат, почему вам можно доверять. "
-        "Конкретные кейсы важнее теории."
-    ),
-    AudienceType.STUDENTS: (
-        "Студенты — академическая аудитория. Важны: строгость формулировок, "
-        "ссылки на источники, чёткая методология, логическая последовательность. "
-        "Избегай корпоративного жаргона."
-    ),
-    AudienceType.COLLEAGUES: (
-        "Коллеги уже знают контекст. Можно использовать внутреннюю терминологию, "
-        "фокусируйся на сути, решениях и следующих шагах. "
-        "Меньше вводной части, больше конкретики."
-    ),
-    AudienceType.MANAGEMENT: (
-        "Руководство ценит краткость и цифры. Начинай с выводов (pyramid principle), "
-        "потом детали. Акцент на business impact, рисках, ресурсах."
-    ),
-    AudienceType.GENERAL: (
-        "Широкая аудитория. Избегай жаргона, объясняй термины, "
-        "используй понятные аналогии. Визуальная составляющая важна."
-    ),
+    AudienceType.INVESTORS: "Инвесторы хотят видеть рынок, бизнес-модель, тракшн, команду. Язык ROI.",
+    AudienceType.CLIENTS: "Клиенты хотят понять как это решает их проблему и каков результат.",
+    AudienceType.STUDENTS: "Академическая аудитория. Строгость, методология, логическая последовательность.",
+    AudienceType.COLLEAGUES: "Коллеги знают контекст. Фокус на сути, решениях, следующих шагах.",
+    AudienceType.MANAGEMENT: "Руководство ценит краткость и цифры. Выводы сначала, потом детали.",
+    AudienceType.GENERAL: "Широкая аудитория. Простой язык, понятные аналогии.",
 }
 
 
-# ─── Генерация ────────────────────────────────────────────────────────────────
-
 def _build_user_prompt(request: UserRequest) -> str:
-    """Собирает пользовательский промпт из шаблона."""
-
     slide_count = request.slide_count_hint or _default_slide_count(request.presentation_type)
-
     slide_count_instruction = f"Количество слайдов: {slide_count} (строго)."
-
     extra_block = ""
     if request.extra_instructions:
-        extra_block = f"Дополнительные пожелания пользователя: {request.extra_instructions}"
-
+        extra_block = f"Дополнительные пожелания: {request.extra_instructions}"
     return USER_PROMPT_TEMPLATE.substitute(
         topic=request.topic,
         presentation_type=request.presentation_type.value,
@@ -190,7 +133,6 @@ def _build_user_prompt(request: UserRequest) -> str:
 
 
 def _default_slide_count(presentation_type: PresentationType) -> int:
-    """Дефолтное количество слайдов по типу."""
     defaults = {
         PresentationType.PITCH_DECK:  12,
         PresentationType.DIPLOMA:     14,
@@ -204,14 +146,13 @@ def _default_slide_count(presentation_type: PresentationType) -> int:
 
 
 def _get_json_schema() -> str:
-    """Возвращает упрощённую схему для промпта — не полный Pydantic JSON Schema."""
     return """{
   "meta": {
-    "title": "string (макс 150 символов)",
+    "title": "string",
     "subtitle": "string | null",
     "author": "string | null",
     "company": "string | null",
-    "date": "string | null (например: 'Июнь 2025')",
+    "date": "string | null",
     "language": "string (ru/en/uz/kk/es/ar/zh/de)",
     "presentation_type": "pitch_deck|diploma|corp_report|educational|sales|conference|roadmap",
     "audience": "investors|clients|students|colleagues|management|general",
@@ -228,12 +169,9 @@ def _get_json_schema() -> str:
       "metrics": [{"value": "string", "label": "string", "trend": "string | null"}],
       "team_members": [{"name": "string", "role": "string", "bio": "string | null", "photo_query": "string | null"}],
       "timeline_items": [{"date": "string", "title": "string", "description": "string | null"}],
-      "two_column": {
-        "left_title": "string | null", "left_text": "string | null", "left_bullets": [],
-        "right_title": "string | null", "right_text": "string | null", "right_bullets": []
-      },
-      "image_query": "string | null (на английском, для Unsplash)",
-      "mermaid_code": "string | null (только для layout=diagram)",
+      "two_column": {"left_title": "string | null", "left_text": "string | null", "left_bullets": [], "right_title": "string | null", "right_text": "string | null", "right_bullets": []},
+      "image_query": "string | null",
+      "mermaid_code": "string | null",
       "speaker_notes": "string | null"
     }
   ]
@@ -248,37 +186,25 @@ def _get_json_schema() -> str:
 async def generate_presentation_structure(
     request: UserRequest,
 ) -> PresentationSchema:
-    """
-    Основная функция: UserRequest → PresentationSchema.
-
-    Retry логика:
-    - 3 попытки с экспоненциальным backoff (2s, 4s, 8s)
-    - Reraise после всех попыток — воркер поймает и сообщит пользователю
-    """
-
     system_prompt = SYSTEM_PROMPT.format(schema=_get_json_schema())
     user_prompt = _build_user_prompt(request)
 
-    logger.info(
-        "Generating presentation structure",
-        extra={
-            "topic": request.topic[:50],
-            "type": request.presentation_type,
-            "audience": request.audience,
-            "language": request.language,
-        },
-    )
+    logger.info("Generating presentation", extra={
+        "topic": request.topic[:50],
+        "type": request.presentation_type,
+        "model": settings.openai_model,
+    })
 
-   response = await client.chat.completions.create(
-            model=settings.openai_model,
-            temperature=0.7,
-            max_tokens=4000,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-        )
+    response = await client.chat.completions.create(
+        model=settings.openai_model,
+        temperature=0.7,
+        max_tokens=4000,
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    )
 
     raw_json = response.choices[0].message.content
 
@@ -286,18 +212,15 @@ async def generate_presentation_structure(
         data = json.loads(raw_json)
         presentation = PresentationSchema.model_validate(data)
     except json.JSONDecodeError as e:
-        logger.error("LLM returned invalid JSON", extra={"error": str(e), "raw": raw_json[:500]})
+        logger.error("LLM returned invalid JSON", extra={"error": str(e)})
         raise
     except Exception as e:
         logger.error("Schema validation failed", extra={"error": str(e)})
         raise
 
-    logger.info(
-        "Presentation structure generated",
-        extra={
-            "slide_count": presentation.slide_count,
-            "title": presentation.meta.title[:50],
-        },
-    )
+    logger.info("Presentation generated", extra={
+        "slide_count": presentation.slide_count,
+        "title": presentation.meta.title[:50],
+    })
 
     return presentation
