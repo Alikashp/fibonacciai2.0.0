@@ -147,20 +147,21 @@ async def cmd_new(message: Message, state: FSMContext):
     )
     await state.set_state(Gen.choosing_type)
 
-
 @dp.callback_query(F.data.startswith("type:"))
 async def on_type(call: CallbackQuery, state: FSMContext):
     ptype = call.data.split(":")[1]
     await state.update_data(presentation_type=ptype)
-    await call.message.edit_text(
-        f"Тип: <b>{TYPE_LABELS.get(ptype, ptype)}</b>\n\n"
-        "✏️ Напишите тему презентации.\n"
-        "<i>Например: «Стартап по доставке еды для собак» или «Анализ рынка e-commerce в СНГ»</i>",
-        parse_mode="HTML",
-    )
+    try:
+        await call.message.edit_text(
+            f"Тип: <b>{TYPE_LABELS.get(ptype, ptype)}</b>\n\n"
+            "✏️ Напишите тему презентации.\n"
+            "<i>Например: «Стартап по доставке еды для собак»</i>",
+            parse_mode="HTML",
+        )
+    except Exception:
+        pass
     await state.set_state(Gen.entering_topic)
     await call.answer()
-
 
 @dp.message(Gen.entering_topic)
 async def on_topic(message: Message, state: FSMContext):
