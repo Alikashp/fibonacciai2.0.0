@@ -11,7 +11,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import (
     Message, CallbackQuery,
     InlineKeyboardMarkup, InlineKeyboardButton,
-    BufferedInputFile,
+    BufferedInputFile, LabeledPrice, PreCheckoutQuery,
 )
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -21,12 +21,21 @@ from schemas.presentation import UserRequest, PresentationType, AudienceType
 from generation.llm import generate_presentation_structure
 from generation.template_engine import render_presentation
 from generation.pdf_renderer import html_to_pdf
+from db.session import init_db, close_db, get_session, get_or_create_user, record_presentation, upgrade_user_plan
+from db.models import PlanType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 bot = Bot(token=settings.telegram_bot_token)
 dp = Dispatcher(storage=MemoryStorage())
+
+# ── Цены в Telegram Stars ─────────────────────────────────────────────────────
+PLANS = {
+    "starter": {"stars": 400,  "label": "Starter — 400 ⭐",  "plan": PlanType.STARTER},
+    "pro":     {"stars": 800,  "label": "Pro — 800 ⭐",      "plan": PlanType.PRO},
+}
+# ~$0.013 за звезду → Starter ≈ $5, Pro ≈ $10 (Railway валюта, не доллары)
 
 
 # ── FSM ───────────────────────────────────────────────────────────────────────
@@ -94,7 +103,7 @@ def kb_language() -> InlineKeyboardMarkup:
 def kb_brief() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="⚡ Пропустить — сгенерировать без брифа", callback_data="brief:skip"),
+            InlineKeyboardButton(text="⚡ Пропустить", callback_data="brief:skip"),
         ],
     ])
 
@@ -104,6 +113,13 @@ def kb_after_pdf() -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton(text="🔄 Новая презентация", callback_data="action:new"),
         ],
+    ])
+
+
+def kb_paywall() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="⭐ Starter — 400 звёзд", callback_data="pay:starter")],
+        [InlineKeyboardButton(text="⭐ Pro — 800 звёзд",     callback_data="pay:pro")],
     ])
 
 
@@ -130,36 +146,32 @@ AUDIENCE_LABELS = {
 
 BRIEF_HINTS = {
     "pitch_deck": (
-        "— Команда: Алия — CEO, 8 лет в финтехе. Марат — CTO, ex-Kaspi\n"
-        "— Тракшн: 1200 пользователей, $15K MRR, рост 30%/мес\n"
-        "— Инвестиции: ищем $300K\n"
-        "— Контакты: ali@startup.kz"
+        "— Команда: имена, роли, опыт\n"
+        "— Тракшн: пользователи, выручка, рост\n"
+        "— Инвестиции: сколько ищете\n"
+        "— Контакты: email, telegram"
     ),
     "diploma": (
-        "— Научный руководитель: проф. Иванов И.И.\n"
-        "— Объект исследования: рынок e-commerce в Казахстане\n"
-        "— Методы: анкетирование 200 респондентов\n"
-        "— Основной результат: корреляция 0.87 между X и Y"
+        "— Научный руководитель\n"
+        "— Объект исследования\n"
+        "— Методы и результаты"
     ),
     "corp_report": (
-        "— Период: Q1 2025\n"
-        "— Выручка: 45M тенге (+12% к плану)\n"
-        "— Проблемы: задержка поставщика\n"
-        "— План Q2: запуск нового продукта"
+        "— Период отчёта\n"
+        "— Ключевые метрики\n"
+        "— Проблемы и планы"
     ),
     "sales": (
-        "— Продукт: CRM-система для малого бизнеса\n"
-        "— Цена: от $49/мес\n"
-        "— Кейс: клиент X увеличил продажи на 34%\n"
-        "— Контакт: sales@company.com"
+        "— Продукт и цена\n"
+        "— Кейсы клиентов\n"
+        "— Контакты"
     ),
 }
 
 DEFAULT_BRIEF_HINT = (
     "— команда и опыт\n"
-    "— текущие метрики и результаты\n"
-    "— ключевые факты которые нужно включить\n"
-    "— контакты для финального слайда"
+    "— метрики и результаты\n"
+    "— контакты"
 )
 
 
@@ -168,13 +180,51 @@ DEFAULT_BRIEF_HINT = (
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
+
+    # Регистрируем пользователя
+    async with get_session() as session:
+        if session:
+            user = await get_or_create_user(
+                session,
+                user_id=message.from_user.id,
+                username=message.from_user.username,
+                first_name=message.from_user.first_name,
+                language_code=message.from_user.language_code,
+            )
+            left = user.presentations_left
+            plan_info = f"\n\n💎 План: {user.plan.value} · Осталось презентаций: {'∞' if user.plan != PlanType.FREE else left}" if user.plan != PlanType.FREE else f"\n\n🎁 Бесплатно осталось: {left} из 2"
+        else:
+            plan_info = ""
+
     await message.answer(
-        "👋 Привет! Я <b>Fibonacci AI</b> — создаю профессиональные презентации за 60 секунд.\n\n"
+        f"👋 Привет! Я <b>Fibonacci AI</b> — создаю профессиональные презентации за 60 секунд.{plan_info}\n\n"
         "Выберите тип презентации:",
         parse_mode="HTML",
         reply_markup=kb_types(),
     )
     await state.set_state(Gen.choosing_type)
+
+
+@dp.message(Command("plan"))
+async def cmd_plan(message: Message):
+    async with get_session() as session:
+        if not session:
+            await message.answer("База данных недоступна.")
+            return
+        user = await get_or_create_user(session, message.from_user.id)
+        if user.plan == PlanType.FREE:
+            text = (
+                f"📊 Ваш план: <b>Free</b>\n"
+                f"Использовано: {user.presentations_count} из 2\n\n"
+                f"Для продолжения работы оформите подписку:"
+            )
+            await message.answer(text, parse_mode="HTML", reply_markup=kb_paywall())
+        else:
+            await message.answer(
+                f"📊 Ваш план: <b>{user.plan.value.title()}</b>\n"
+                f"Всего сгенерировано: {user.presentations_count} презентаций",
+                parse_mode="HTML",
+            )
 
 
 @dp.message(Command("new"))
@@ -205,7 +255,7 @@ async def on_type(call: CallbackQuery, state: FSMContext):
 async def on_topic(message: Message, state: FSMContext):
     topic = message.text.strip()
     if len(topic) < 3:
-        await message.answer("Тема слишком короткая. Напишите подробнее.")
+        await message.answer("Тема слишком короткая.")
         return
     if len(topic) > 300:
         await message.answer("Тема слишком длинная. Сократите до 300 символов.")
@@ -260,8 +310,7 @@ async def on_language(call: CallbackQuery, state: FSMContext):
     hint = BRIEF_HINTS.get(ptype, DEFAULT_BRIEF_HINT)
     try:
         await call.message.edit_text(
-            "📝 <b>Расскажите о проекте</b> — необязательно, но сильно улучшит результат.\n\n"
-            "Добавьте реальные данные:\n"
+            "📝 <b>Расскажите о проекте</b> — необязательно, но улучшит результат.\n\n"
             f"<i>{hint}</i>\n\n"
             "Или нажмите кнопку ниже чтобы пропустить.",
             parse_mode="HTML",
@@ -304,6 +353,65 @@ async def on_new(call: CallbackQuery, state: FSMContext):
     await call.answer()
 
 
+# ── Оплата через Telegram Stars ───────────────────────────────────────────────
+
+@dp.callback_query(F.data.startswith("pay:"))
+async def on_pay(call: CallbackQuery):
+    plan_key = call.data.split(":")[1]
+    plan = PLANS.get(plan_key)
+    if not plan:
+        await call.answer("Неизвестный тариф")
+        return
+
+    plan_descriptions = {
+        "starter": "15 презентаций · Все шаблоны · Без водяного знака",
+        "pro": "50 презентаций · Всё из Starter · AI-изображения · Приоритетная очередь",
+    }
+
+    await bot.send_invoice(
+        chat_id=call.from_user.id,
+        title=f"Fibonacci AI — {plan_key.title()}",
+        description=plan_descriptions.get(plan_key, ""),
+        payload=f"plan:{plan_key}",
+        currency="XTR",  # Telegram Stars
+        prices=[LabeledPrice(label=plan["label"], amount=plan["stars"])],
+    )
+    await call.answer()
+
+
+@dp.pre_checkout_query()
+async def on_pre_checkout(pre_checkout: PreCheckoutQuery):
+    await pre_checkout.answer(ok=True)
+
+
+@dp.message(F.successful_payment)
+async def on_successful_payment(message: Message):
+    payment = message.successful_payment
+    payload = payment.invoice_payload  # "plan:starter" или "plan:pro"
+    plan_key = payload.split(":")[1] if ":" in payload else "starter"
+    plan_info = PLANS.get(plan_key, PLANS["starter"])
+
+    async with get_session() as session:
+        if session:
+            user = await get_or_create_user(session, message.from_user.id)
+            await upgrade_user_plan(
+                session,
+                user=user,
+                plan=plan_info["plan"],
+                telegram_payment_charge_id=payment.telegram_payment_charge_id,
+                stars_amount=payment.total_amount,
+            )
+
+    plan_limits = {"starter": "15", "pro": "50"}
+    await message.answer(
+        f"🎉 Оплата прошла! Добро пожаловать в <b>{plan_key.title()}</b>.\n\n"
+        f"Доступно презентаций: <b>{plan_limits.get(plan_key, '∞')}</b>\n"
+        f"Водяной знак: <b>убран</b>\n\n"
+        f"Создайте первую презентацию: /new",
+        parse_mode="HTML",
+    )
+
+
 # ── Подтверждение и запуск ────────────────────────────────────────────────────
 
 async def _confirm_and_generate(message: Message, data: dict, state: FSMContext):
@@ -312,8 +420,27 @@ async def _confirm_and_generate(message: Message, data: dict, state: FSMContext)
     audience = data["audience"]
     lang     = data["language"]
     brief    = data.get("brief")
-    brief_line = "\n• <b>Бриф:</b> добавлен ✓" if brief else ""
 
+    # Проверяем лимит
+    async with get_session() as session:
+        if session:
+            user = await get_or_create_user(
+                session,
+                user_id=message.chat.id,
+            )
+            if not user.can_generate:
+                await state.clear()
+                await message.answer(
+                    "😔 Вы использовали все бесплатные презентации (2 из 2).\n\n"
+                    "Оформите подписку чтобы продолжить:",
+                    reply_markup=kb_paywall(),
+                )
+                return
+            watermark = user.plan == PlanType.FREE
+        else:
+            watermark = True
+
+    brief_line = "\n• <b>Бриф:</b> добавлен ✓" if brief else ""
     await message.answer(
         f"✅ <b>Создаю презентацию:</b>\n\n"
         f"• Тип: <b>{TYPE_LABELS.get(ptype, ptype)}</b>\n"
@@ -321,16 +448,16 @@ async def _confirm_and_generate(message: Message, data: dict, state: FSMContext)
         f"• Аудитория: <b>{AUDIENCE_LABELS.get(audience, audience)}</b>\n"
         f"• Язык: <b>{lang.upper()}</b>"
         f"{brief_line}\n\n"
-        f"⏳ Обычно занимает 60–90 секунд. Не закрывайте чат.",
+        f"⏳ Обычно занимает 60–90 секунд.",
         parse_mode="HTML",
     )
     await state.clear()
-    await generate_and_send(message, data)
+    await generate_and_send(message, data, watermark=watermark)
 
 
 # ── Генерация ─────────────────────────────────────────────────────────────────
 
-async def generate_and_send(message: Message, data: dict):
+async def generate_and_send(message: Message, data: dict, watermark: bool = True):
     status_msg = await message.answer("⚙️ Генерирую структуру слайдов...")
 
     try:
@@ -338,8 +465,7 @@ async def generate_and_send(message: Message, data: dict):
         extra = None
         if brief:
             extra = (
-                f"ВАЖНО — используй эти реальные данные в презентации:\n\n"
-                f"{brief}\n\n"
+                f"ВАЖНО — используй эти реальные данные:\n\n{brief}\n\n"
                 f"Вставляй точно: имена, цифры, контакты."
             )
 
@@ -351,25 +477,36 @@ async def generate_and_send(message: Message, data: dict):
             extra_instructions=extra,
         )
 
-        # 1. LLM → структура
         await status_msg.edit_text("⚙️ Пишу текст слайдов...")
         presentation = await generate_presentation_structure(request)
 
-        # 2. Фото с Unsplash
         await status_msg.edit_text("⚙️ Подбираю изображения...")
         from generation.image_fetcher import fetch_images_for_slides
         image_urls = await fetch_images_for_slides(presentation.slides)
 
-        # 3. HTML
         await status_msg.edit_text("⚙️ Собираю дизайн...")
-        html = render_presentation(presentation, image_urls=image_urls, watermark=True)
+        html = render_presentation(presentation, image_urls=image_urls, watermark=watermark)
 
-        # 4. PDF
         await status_msg.edit_text("⚙️ Рендерю PDF...")
         has_mermaid = any(s.layout.value == "diagram" for s in presentation.slides)
         pdf_bytes = await html_to_pdf(html, has_mermaid=has_mermaid)
 
-        # 5. Отправляем
+        # Записываем в БД
+        async with get_session() as session:
+            if session:
+                user = await get_or_create_user(session, message.chat.id)
+                await record_presentation(
+                    session,
+                    user=user,
+                    topic=data["topic"],
+                    presentation_type=data["presentation_type"],
+                    audience=data["audience"],
+                    language=data["language"],
+                    slide_count=presentation.slide_count,
+                    has_brief=bool(data.get("brief")),
+                    watermark=watermark,
+                )
+
         await status_msg.delete()
 
         safe_title = "".join(
@@ -377,14 +514,16 @@ async def generate_and_send(message: Message, data: dict):
             for c in presentation.meta.title
         )[:40]
 
+        caption = (
+            f"✨ <b>{presentation.meta.title}</b>\n"
+            f"{presentation.slide_count} слайдов · {TYPE_LABELS.get(data['presentation_type'], '')}"
+        )
+        if watermark:
+            caption += "\n\n<i>Бесплатная версия · Уберите водяной знак в /plan</i>"
+
         await message.answer_document(
             document=BufferedInputFile(pdf_bytes, filename=f"{safe_title}.pdf"),
-            caption=(
-                f"✨ <b>{presentation.meta.title}</b>\n"
-                f"{presentation.slide_count} слайдов · "
-                f"{TYPE_LABELS.get(data['presentation_type'], '')}\n\n"
-                f"<i>Бесплатная версия содержит водяной знак</i>"
-            ),
+            caption=caption,
             parse_mode="HTML",
             reply_markup=kb_after_pdf(),
         )
@@ -392,8 +531,7 @@ async def generate_and_send(message: Message, data: dict):
     except Exception as e:
         logger.exception(f"Generation failed: {e}")
         await status_msg.edit_text(
-            "❌ Что-то пошло не так. Попробуйте ещё раз через /new\n\n"
-            "<i>Если ошибка повторяется — напишите нам.</i>",
+            "❌ Что-то пошло не так. Попробуйте ещё раз через /new",
             parse_mode="HTML",
         )
 
@@ -402,13 +540,20 @@ async def generate_and_send(message: Message, data: dict):
 
 async def main():
     from generation.pdf_renderer import get_renderer, shutdown_renderer
+
     logger.info("Starting Fibonacci AI bot...")
+    await init_db()
     await get_renderer()
     logger.info("Playwright ready")
+
     try:
-        await dp.start_polling(bot, allowed_updates=["message", "callback_query"])
+        await dp.start_polling(
+            bot,
+            allowed_updates=["message", "callback_query", "pre_checkout_query"],
+        )
     finally:
         await shutdown_renderer()
+        await close_db()
         await bot.session.close()
 
 
