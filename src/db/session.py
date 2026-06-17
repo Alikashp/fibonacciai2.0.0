@@ -138,7 +138,7 @@ async def upgrade_user_plan(
 ) -> None:
     """Обновляет план после оплаты."""
     from db.models import Payment
-    user.plan = plan
+    user.plan = plan.value if hasattr(plan, "value") else plan
     payment = Payment(
         user_id=user.user_id,
         telegram_payment_charge_id=telegram_payment_charge_id,
