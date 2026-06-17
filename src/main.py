@@ -192,7 +192,7 @@ async def cmd_start(message: Message, state: FSMContext):
                 language_code=message.from_user.language_code,
             )
             left = user.presentations_left
-            plan_info = f"\n\n💎 План: {user.plan.value} · Осталось презентаций: {'∞' if user.plan != PlanType.FREE else left}" if user.plan != PlanType.FREE else f"\n\n🎁 Бесплатно осталось: {left} из 2"
+            plan_info = f"\n\n💎 План: {user.plan.value} · Осталось презентаций: {'∞' if user.plan != "free" else left}" if user.plan != "free" else f"\n\n🎁 Бесплатно осталось: {left} из 2"
         else:
             plan_info = ""
 
@@ -212,7 +212,7 @@ async def cmd_plan(message: Message):
             await message.answer("База данных недоступна.")
             return
         user = await get_or_create_user(session, message.from_user.id)
-        if user.plan == PlanType.FREE:
+        if user.plan == "free":
             text = (
                 f"📊 Ваш план: <b>Free</b>\n"
                 f"Использовано: {user.presentations_count} из 2\n\n"
@@ -397,7 +397,7 @@ async def on_successful_payment(message: Message):
             await upgrade_user_plan(
                 session,
                 user=user,
-                plan=plan_info["plan"],
+                plan=plan_info["plan"].value,
                 telegram_payment_charge_id=payment.telegram_payment_charge_id,
                 stars_amount=payment.total_amount,
             )
@@ -436,7 +436,7 @@ async def _confirm_and_generate(message: Message, data: dict, state: FSMContext)
                     reply_markup=kb_paywall(),
                 )
                 return
-            watermark = user.plan == PlanType.FREE
+            watermark = user.plan == "free"
         else:
             watermark = True
 
