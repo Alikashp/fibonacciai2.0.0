@@ -45,6 +45,7 @@ class Gen(StatesGroup):
     entering_topic    = State()
     choosing_audience = State()
     choosing_language = State()
+    choosing_scheme   = State()
     entering_brief    = State()
 
 
@@ -98,6 +99,25 @@ def kb_language() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🇰🇿 Қазақша",    callback_data="lang:kk"),
         ],
     ])
+
+
+def kb_scheme(plan: str = "free") -> InlineKeyboardMarkup:
+    rows = [
+        [InlineKeyboardButton(text="⬜ Classic Light", callback_data="scheme:light")],
+    ]
+    if plan != "free":
+        rows += [
+            [InlineKeyboardButton(text="🌑 Midnight",      callback_data="scheme:dark")],
+            [InlineKeyboardButton(text="🌿 Forest",        callback_data="scheme:forest")],
+            [InlineKeyboardButton(text="🔥 Ember",         callback_data="scheme:ember")],
+        ]
+    else:
+        rows += [
+            [InlineKeyboardButton(text="🌑 Midnight  🔒",  callback_data="scheme:locked")],
+            [InlineKeyboardButton(text="🌿 Forest  🔒",    callback_data="scheme:locked")],
+            [InlineKeyboardButton(text="🔥 Ember  🔒",     callback_data="scheme:locked")],
+        ]
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def kb_brief() -> InlineKeyboardMarkup:
@@ -310,6 +330,35 @@ async def on_language(call: CallbackQuery, state: FSMContext):
         await call.message.answer("Сессия устарела. Начнём заново:", reply_markup=kb_types())
         await state.set_state(Gen.choosing_type)
         return
+    # Получаем план пользователя для показа схем
+    user_plan = "free"
+    async with get_session() as session:
+        if session:
+            user = await get_or_create_user(session, call.from_user.id)
+            user_plan = user.plan
+
+    try:
+        await call.message.edit_text(
+            "🎨 <b>Выберите цветовую схему</b>\n\n"
+            "<i>Midnight, Forest и Ember доступны на платном плане</i>",
+            parse_mode="HTML",
+            reply_markup=kb_scheme(user_plan),
+        )
+    except Exception:
+        pass
+    await state.set_state(Gen.choosing_scheme)
+    await call.answer()
+
+
+@dp.callback_query(F.data.startswith("scheme:"))
+async def on_scheme(call: CallbackQuery, state: FSMContext):
+    scheme = call.data.split(":")[1]
+    if scheme == "locked":
+        await call.answer("🔒 Доступно на платном плане. Используйте /plan", show_alert=True)
+        return
+    await state.update_data(color_scheme=scheme)
+    data = await state.get_data()
+    ptype = data.get("presentation_type", "pitch_deck")
     hint = BRIEF_HINTS.get(ptype, DEFAULT_BRIEF_HINT)
     try:
         await call.message.edit_text(
@@ -488,7 +537,8 @@ async def generate_and_send(message: Message, data: dict, watermark: bool = True
         image_urls = await fetch_images_for_slides(presentation.slides)
 
         await status_msg.edit_text("⚙️ Собираю дизайн...")
-        html = render_presentation(presentation, image_urls=image_urls, watermark=watermark)
+        color_scheme = data.get("color_scheme", "light")
+        html = render_presentation(presentation, image_urls=image_urls, watermark=watermark, color_scheme=color_scheme)
 
         await status_msg.edit_text("⚙️ Рендерю PDF...")
         has_mermaid = any(s.layout.value == "diagram" for s in presentation.slides)
