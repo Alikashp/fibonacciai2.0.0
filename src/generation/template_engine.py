@@ -52,6 +52,7 @@ def render_presentation(
     image_urls: dict[int, str] | None = None,
     team_photo_urls: dict[str, str] | None = None,
     watermark: bool = False,
+    color_scheme: str = "light",
 ) -> str:
     """
     Рендерит HTML из схемы презентации.
@@ -84,6 +85,7 @@ def render_presentation(
         meta=presentation.meta,
         slides=slides,
         watermark=watermark,
+        color_scheme=color_scheme,
     )
 
     logger.info(
