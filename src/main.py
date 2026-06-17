@@ -227,6 +227,13 @@ async def on_topic(message: Message, state: FSMContext):
 async def on_audience(call: CallbackQuery, state: FSMContext):
     audience = call.data.split(":")[1]
     await state.update_data(audience=audience)
+    data = await state.get_data()
+    if not data.get("presentation_type"):
+        await call.answer()
+        await state.clear()
+        await call.message.answer("Сессия устарела. Начнём заново:", reply_markup=kb_types())
+        await state.set_state(Gen.choosing_type)
+        return
     try:
         await call.message.edit_text(
             "На каком языке делаем презентацию?",
@@ -243,7 +250,13 @@ async def on_language(call: CallbackQuery, state: FSMContext):
     lang = call.data.split(":")[1]
     await state.update_data(language=lang)
     data = await state.get_data()
-    ptype = data["presentation_type"]
+    ptype = data.get("presentation_type")
+    if not ptype:
+        await call.answer()
+        await state.clear()
+        await call.message.answer("Сессия устарела. Начнём заново:", reply_markup=kb_types())
+        await state.set_state(Gen.choosing_type)
+        return
     hint = BRIEF_HINTS.get(ptype, DEFAULT_BRIEF_HINT)
     try:
         await call.message.edit_text(
