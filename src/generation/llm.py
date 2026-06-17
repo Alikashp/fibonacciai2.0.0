@@ -39,17 +39,17 @@ SYSTEM_PROMPT = """\
 - НЕ пиши [ЦИФРА] — лучше реалистичный диапазон "$5-15B".
 
 СТРУКТУРА ПИТЧ-ДЕКА (строго 11 слайдов):
-1. title — название, подзаголовок. ОБЯЗАТЕЛЬНО поставь image_query — фото для фона (на английском, например: "modern medical clinic reception" или "healthy lifestyle nature")
-2. problem — layout="problem", title = реальный заголовок проблемы (НЕ просто "Проблема"), subtitle = одно предложение описания. ОБЯЗАТЕЛЬНО metrics с 2-3 цифрами + источниками
-3. solution — layout="solution", title = реальный заголовок решения (НЕ просто "Решение"), subtitle = одно предложение. bullets с преимуществами + metrics с результатами
-4. why_now — layout="bullets", 4 тренда. title = "Почему сейчас?", subtitle = одно предложение контекста. bullets: каждый пункт формат "Название тренда — объяснение в 1-2 предложения"
-5. market — layout="market", 3 метрики TAM/SAM/SOM с источниками и расчётами
-6. biz_model — layout="two_column", потоки дохода + юнит-экономика (CAC, LTV, LTV/CAC)
-7. traction — layout="metrics", 3 ключевые метрики роста. title = "Трекшн"
-8. competition — layout="competition", таблица сравнения с конкурентами
-9. team — layout="team", 3-4 члена команды с gender (male/female) по имени
-10. roadmap — layout="timeline", 4 этапа + body_text с распределением инвестиций
-11. closing — layout="closing", запрос и контакты
+1. title — название, подзаголовок. ОБЯЗАТЕЛЬНО image_query на английском (например: "modern startup office team" или "technology innovation abstract").
+2. problem — layout="problem", title = РЕАЛЬНЫЙ заголовок проблемы (не "Проблема"), subtitle = одно предложение. ОБЯЗАТЕЛЬНО: image_query на английском для фото слева. metrics: 2-3 цифры с source.
+3. solution — layout="solution", title = РЕАЛЬНЫЙ заголовок решения (не "Решение"), subtitle = одно предложение. ОБЯЗАТЕЛЬНО: image_query для фото справа. bullets: 3 преимущества. metrics: 2-3 результата.
+4. why_now — layout="bullets", title = "Почему сейчас?", subtitle = краткий контекст. bullets: 4 тренда, каждый формат "Название — объяснение в 1-2 предложения".
+5. market — layout="market", title = "Объём рынка", subtitle = методология расчёта. 3 метрики TAM/SAM/SOM с обязательным полем source (источник + расчёт).
+6. biz_model — layout="two_column". title = "Модель монетизации". two_column.left_title = тип модели через запятую (например: "Freemium, Подписка" или "SaaS, White-label"). left_bullets: 3-4 тарифа/пакета в формате "Название — Цена — описание что входит". right_text = дополнительный контекст о модели (1-2 предложения). БЕЗ юнит-экономики.
+7. traction — layout="metrics", title = "Трекшн", subtitle = контекст. 3 метрики прогресса (от прошлого к настоящему).
+8. competition — layout="competition", таблица с РЕАЛЬНЫМИ конкурентами (не "Competitor A"). МИНИМУМ 5 критериев.
+9. team — layout="team", 3-4 члена с gender (male/female), bio обязательно.
+10. roadmap — layout="timeline", 4 этапа + body_text с распределением инвестиций по строкам.
+11. closing — layout="closing", title = "Давайте работать вместе", subtitle = приглашение к диалогу или вопросы, body_text = условия инвестиций или следующий шаг.
 
 COMPETITION TABLE — СТРОГИЕ ПРАВИЛА:
 1. competitors: ТОЛЬКО реальные названия компаний на этом рынке. ЗАПРЕЩЕНО писать "Competitor A", "Конкурент 1" и любые заглушки.
