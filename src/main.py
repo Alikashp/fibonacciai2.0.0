@@ -192,7 +192,10 @@ async def cmd_start(message: Message, state: FSMContext):
                 language_code=message.from_user.language_code,
             )
             left = user.presentations_left
-            plan_info = f"\n\n💎 План: {user.plan.value} · Осталось презентаций: {'∞' if user.plan != "free" else left}" if user.plan != "free" else f"\n\n🎁 Бесплатно осталось: {left} из 2"
+            if user.plan != "free":
+                plan_info = f"\n\n💎 План: {user.plan} · Презентации: ∞"
+            else:
+                plan_info = f"\n\n🎁 Бесплатно осталось: {left} из 2"
         else:
             plan_info = ""
 
