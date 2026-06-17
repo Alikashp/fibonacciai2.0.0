@@ -14,7 +14,7 @@
 
 from datetime import datetime
 from sqlalchemy import (
-    BigInteger, Boolean, DateTime, Enum, Integer,
+    BigInteger, Boolean, DateTime, Integer,
     String, Text, ForeignKey, func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -39,8 +39,8 @@ class User(Base):
     username: Mapped[str | None] = mapped_column(String(64))
     first_name: Mapped[str | None] = mapped_column(String(128))
     language_code: Mapped[str | None] = mapped_column(String(8))
-    plan: Mapped[PlanType] = mapped_column(
-        Enum(PlanType), default=PlanType.FREE, server_default="free"
+    plan: Mapped[str] = mapped_column(
+        String(16), default="free", server_default="free"
     )
     presentations_count: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(
@@ -59,13 +59,13 @@ class User(Base):
 
     @property
     def can_generate(self) -> bool:
-        if self.plan != PlanType.FREE:
+        if self.plan != "free":
             return True
         return self.presentations_count < self.free_limit
 
     @property
     def presentations_left(self) -> int:
-        if self.plan != PlanType.FREE:
+        if self.plan != "free":
             return 999
         return max(0, self.free_limit - self.presentations_count)
 
@@ -95,7 +95,7 @@ class Payment(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.user_id"))
     telegram_payment_charge_id: Mapped[str] = mapped_column(String(256), unique=True)
-    plan: Mapped[PlanType] = mapped_column(Enum(PlanType))
+    plan: Mapped[str] = mapped_column(String(16))
     stars_amount: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
