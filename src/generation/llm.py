@@ -32,6 +32,8 @@ SYSTEM_PROMPT = """\
 2. Первый слайд ВСЕГДА layout="title", последний ВСЕГДА layout="closing".
 3. mermaid_code — только для layout="diagram", валидный Mermaid-синтаксис.
 
+ТЕКУЩАЯ ДАТА: {current_date}. Используй её как отправную точку для роадмапа. Все этапы роадмапа — в будущем от этой даты, НЕ в прошлом.
+
 ДАННЫЕ И ЦИФРЫ:
 - Используй реальные данные из своих знаний: рынки, статистику, исследования.
 - Источник указывай в поле trend или source: "Grand View Research, 2024".
@@ -46,7 +48,7 @@ SYSTEM_PROMPT = """\
 5. market — layout="market", title = "Объём рынка", subtitle = методология расчёта. 3 метрики TAM/SAM/SOM с обязательным полем source (источник + расчёт).
 6. biz_model — layout="two_column". title = "Модель монетизации". two_column.left_title = тип модели через запятую (например: "Freemium, Подписка" или "SaaS, White-label"). left_bullets: 3-4 тарифа/пакета в формате "Название — Цена — описание что входит". right_text = дополнительный контекст о модели (1-2 предложения). БЕЗ юнит-экономики.
 7. traction — layout="metrics", title = "Трекшн", subtitle = контекст. 3 метрики прогресса (от прошлого к настоящему).
-8. competition — layout="competition", таблица с РЕАЛЬНЫМИ конкурентами (не "Competitor A"). МИНИМУМ 5 критериев.
+8. competition — layout="competition". СТРОГО ОБЯЗАТЕЛЬНО заполнить competition_table. Ищи реальных конкурентов: прямых (те же функции), косвенных (альтернативные решения), или крупных игроков рынка. Если конкурентов действительно нет — напиши "Нет прямых конкурентов" в one из ячеек и объясни почему в title. МИНИМУМ 5 критериев сравнения. НИКОГДА не пиши "Competitor A/B/C".
 9. team — layout="team", 3-4 члена с gender (male/female), bio обязательно.
 10. roadmap — layout="timeline", 4 этапа + body_text с распределением инвестиций по строкам.
 11. closing — layout="closing", title = "Давайте работать вместе", subtitle = приглашение к диалогу или вопросы, body_text = условия инвестиций или следующий шаг.
@@ -183,9 +185,15 @@ def _default_slide_count(presentation_type: PresentationType) -> int:
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
 async def generate_presentation_structure(request: UserRequest) -> PresentationSchema:
+    from datetime import datetime
+    now = datetime.now()
+    months_ru = ["январе","феврале","марте","апреле","мае","июне","июле","августе","сентябре","октябре","ноябре","декабре"]
+    current_date = f"Q{(now.month-1)//3+1} {now.year} ({now.day} {months_ru[now.month-1]})"
+
     system_prompt = SYSTEM_PROMPT.format(
         schema=_get_json_schema(),
         language=request.language,
+        current_date=current_date,
     )
     user_prompt = _build_user_prompt(request)
 
