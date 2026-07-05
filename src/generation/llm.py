@@ -46,7 +46,7 @@ SYSTEM_PROMPT = """\
 3. solution — layout="solution", title = РЕАЛЬНЫЙ заголовок решения (не "Решение"), subtitle = одно предложение. ОБЯЗАТЕЛЬНО: image_query для фото справа. bullets: 3 преимущества. metrics: 2-3 результата.
 4. why_now — layout="bullets", title = "Почему сейчас?", subtitle = краткий контекст. bullets: 4 тренда, каждый формат "Название — объяснение в 1-2 предложения".
 5. market — layout="market", title = "Объём рынка", subtitle = методология расчёта. 3 метрики TAM/SAM/SOM с обязательным полем source (источник + расчёт).
-6. biz_model — layout="two_column". title = "Модель монетизации". two_column.left_title = тип модели через запятую (например: "Freemium, Подписка" или "SaaS, White-label"). left_bullets: 3-4 тарифа/пакета в формате "Название — Цена — описание что входит". right_text = дополнительный контекст о модели (1-2 предложения). БЕЗ юнит-экономики.
+6. biz_model — layout="two_column". title = "Модель монетизации". two_column.left_title = тип модели через запятую (например: "Freemium, Подписка"). left_bullets: СТРОГО массив объектов формата {"text": "Название — Цена", "emphasis": false}. НЕ строки, только объекты. right_text = контекст о модели. БЕЗ юнит-экономики.
 7. traction — layout="metrics", title = "Трекшн", subtitle = контекст. 3 метрики прогресса (от прошлого к настоящему).
 8. competition — layout="competition". СТРОГО ОБЯЗАТЕЛЬНО заполнить competition_table. Ищи реальных конкурентов: прямых (те же функции), косвенных (альтернативные решения), или крупных игроков рынка. Если конкурентов действительно нет — напиши "Нет прямых конкурентов" в one из ячеек и объясни почему в title. МИНИМУМ 5 критериев сравнения. НИКОГДА не пиши "Competitor A/B/C".
 9. team — layout="team", 3-4 члена с gender (male/female), bio обязательно.
@@ -139,7 +139,7 @@ def _get_json_schema() -> str:
     "metrics": [{"value": "string", "label": "string", "trend": "string|null", "source": "string|null"}],
     "team_members": [{"name": "string", "role": "string", "bio": "string|null", "gender": "male|female"}],
     "timeline_items": [{"date": "string", "title": "string", "description": "string|null"}],
-    "two_column": {"left_title": "string|null", "left_text": "string|null", "left_bullets": [], "right_title": "string|null", "right_text": "string|null", "right_bullets": []},
+    "two_column": {"left_title": "string|null", "left_text": "string|null", "left_bullets": [{"text": "string", "emphasis": false}], "right_title": "string|null", "right_text": "string|null", "right_bullets": [{"text": "string", "emphasis": false}]},
     "competition_table": {
       "our_name": "string",
       "competitors": [{"name": "string"}],
