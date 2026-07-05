@@ -75,6 +75,16 @@ class TwoColumnContent(BaseModel):
     right_text: Optional[str] = Field(None, max_length=500)
     right_bullets: list[BulletPoint] = Field(default_factory=list, max_length=6)
 
+    @field_validator("left_bullets", "right_bullets", mode="before")
+    @classmethod
+    def coerce_bullets(cls, v):
+        if not isinstance(v, list):
+            return []
+        return [
+            {"text": item, "emphasis": False} if isinstance(item, str) else item
+            for item in v
+        ]
+
 
 class CompetitorItem(BaseModel):
     name: str = Field(..., max_length=60)
