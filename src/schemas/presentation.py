@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class PresentationType(str, Enum):
@@ -20,6 +20,21 @@ class AudienceType(str, Enum):
     COLLEAGUES   = "colleagues"
     MANAGEMENT   = "management"
     GENERAL      = "general"
+    SCHOOLKIDS   = "schoolkids"
+    FRIENDS      = "friends"
+
+
+class ContentVolume(str, Enum):
+    SHORT  = "short"
+    MEDIUM = "medium"
+    LONG   = "long"
+
+
+class ContentSourceType(str, Enum):
+    TOPIC    = "topic"
+    TEXT     = "text"
+    DOCUMENT = "document"
+    URL      = "url"
 
 
 class SlideLayout(str, Enum):
@@ -169,3 +184,12 @@ class UserRequest(BaseModel):
     language: str = Field(default="ru", pattern=r"^[a-z]{2}$")
     extra_instructions: Optional[str] = Field(None, max_length=2000)
     slide_count_hint: Optional[int] = Field(None, ge=5, le=20)
+    source_type: ContentSourceType = ContentSourceType.TOPIC
+    raw_text: Optional[str] = Field(None, max_length=15000)
+    content_volume: ContentVolume = ContentVolume.MEDIUM
+
+    @model_validator(mode="after")
+    def validate_raw_text(self):
+        if self.source_type != ContentSourceType.TOPIC and not (self.raw_text and self.raw_text.strip()):
+            raise ValueError("raw_text обязателен, если source_type != topic")
+        return self
