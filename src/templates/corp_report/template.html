@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="{{ meta.language }}">
+<head>
+<meta charset="UTF-8">
+<title>{{ meta.title }}</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--W:794px;--H:446px}
+
+/* ══ Classic Light — стандартный корпоративный отчёт ══ */
+body.scheme-light{
+  --w:#ffffff;--b:#111418;--g50:#f4f6f8;--g100:#e9ecf0;--g200:#d3d9e0;--g500:#767e8c;
+  --accent:#2a5fd9;--accent-ink:#ffffff;--card:#f9fafb;--card-line:#e3e7ec;--pos:#1d9e75;--neg:#d9432a;
+}
+/* ══ Midnight — тёмный дашборд ══ */
+body.scheme-dark{
+  --w:#0b1220;--b:#eef1f7;--g50:#111a2b;--g100:#182338;--g200:#2c3a56;--g500:#8b96ad;
+  --accent:#3dd6f5;--accent-ink:#06222a;--card:#101a2d;--card-line:#1f2c45;--pos:#4ade9e;--neg:#ff6a5b;
+}
+/* ══ Forest — ESG / устойчивое развитие ══ */
+body.scheme-forest{
+  --w:#f5f9f5;--b:#0a2318;--g50:#e8f5ee;--g100:#d4edde;--g200:#9fe1cb;--g500:#3d7a5e;
+  --accent:#1d9e75;--accent-ink:#ffffff;--card:#ffffff;--card-line:#d4edde;--pos:#1d9e75;--neg:#d9432a;
+}
+/* ══ Ember — квартал с ростом рисков / антикризис ══ */
+body.scheme-ember{
+  --w:#fffaf7;--b:#2a0f05;--g50:#fdf0e8;--g100:#fae0cc;--g200:#f5c4b3;--g500:#8a4a30;
+  --accent:#d85a30;--accent-ink:#ffffff;--card:#ffffff;--card-line:#fae0cc;--pos:#1d9e75;--neg:#d9432a;
+}
+
+body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.slide{width:var(--W);height:var(--H);background:var(--w);color:var(--b);overflow:hidden;position:relative;page-break-after:always;page-break-inside:avoid}
+.zn{position:absolute}
+.tag{display:inline-block;font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:4px;background:var(--accent);color:var(--accent-ink);margin-bottom:6px}
+.ft{position:absolute;bottom:10px;left:24px;right:24px;display:flex;justify-content:space-between;z-index:5}
+.ftb{font-family:'Outfit',sans-serif;font-size:8px;font-weight:700;color:var(--g200)}
+.ftn{font-size:8px;color:var(--g200)}
+{% if watermark %}.wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-family:'Outfit',sans-serif;font-size:64px;font-weight:900;color:rgba(0,0,0,0.04);white-space:nowrap;pointer-events:none;z-index:100;letter-spacing:.1em}{% endif %}
+
+.cr-title{font-family:'Outfit',sans-serif;font-size:22px;font-weight:800;line-height:1.15}
+.cr-subtitle{font-size:11px;color:var(--g500);line-height:1.5;margin-top:5px}
+
+/* ══ TITLE (резюме) ══ */
+.cr-bar{position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--accent)}
+.cr-h1{font-family:'Outfit',sans-serif;font-size:34px;font-weight:800;line-height:1.08;letter-spacing:-.01em}
+.cr-sub{font-size:12px;color:var(--g500);margin-top:10px;line-height:1.5}
+.cr-photo{width:100%;height:100%;border-radius:8px;overflow:hidden}
+.cr-photo img{width:100%;height:100%;object-fit:cover}
+.cr-photo-ph{width:100%;height:100%;background:var(--g50);border:0.5px solid var(--card-line);border-radius:8px}
+.cr-meta{display:flex;gap:10px;border-top:0.5px solid var(--card-line);padding-top:8px;height:100%;align-items:center}
+.cr-meta span{font-size:9px;color:var(--g500);padding-right:10px;border-right:0.5px solid var(--card-line)}
+.cr-meta span:last-child{border-right:none}
+
+/* ══ METRICS / MARKET (дашборд) ══ */
+.cr-kpi-row{display:flex;gap:8px;height:100%}
+.cr-kpi{flex:1;background:var(--card);border:0.5px solid var(--card-line);border-radius:8px;padding:14px;display:flex;flex-direction:column;justify-content:space-between}
+.cr-kpi-lbl{font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:var(--g500)}
+.cr-kpi-val{font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;margin:6px 0;color:var(--b)}
+.cr-kpi-tr{font-size:9px;font-weight:700;display:inline-block;padding:2px 7px;border-radius:20px}
+.cr-kpi-tr.up{background:color-mix(in srgb, var(--pos) 16%, transparent);color:var(--pos)}
+.cr-kpi-tr.down{background:color-mix(in srgb, var(--neg) 16%, transparent);color:var(--neg)}
+.cr-kpi-src{font-size:8px;color:var(--g500);opacity:.8;border-top:0.5px solid var(--card-line);padding-top:6px;margin-top:8px}
+
+/* ══ TWO_COLUMN (план / факт) ══ */
+.cr-col{background:var(--card);border:0.5px solid var(--card-line);border-radius:8px;padding:14px;height:100%;display:flex;flex-direction:column;overflow:hidden}
+.cr-col.fact{border-color:var(--accent)}
+.cr-col-h{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
+.cr-col-txt{font-size:10px;color:var(--g500);line-height:1.5;margin-bottom:8px}
+.cr-row{display:flex;flex-direction:column;gap:7px}
+.cr-item{display:flex;align-items:flex-start;gap:8px}
+.cr-item-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0}
+.cr-item-t{font-size:10px;color:var(--b);line-height:1.5}
+
+/* ══ BULLETS (проблемы) ══ */
+.cr-problems{display:flex;flex-direction:column;gap:8px;height:100%}
+.cr-problem{background:var(--card);border-left:3px solid var(--neg);border-radius:0 8px 8px 0;padding:10px 12px}
+.cr-problem-t{font-size:11px;color:var(--b);line-height:1.5}
+
+/* ══ COMPETITION ══ */
+.cr-tbl{width:100%;border-collapse:collapse}
+.cr-tbl th{padding:6px 8px;text-align:center;font-weight:500;color:var(--g500);border-bottom:0.5px solid var(--card-line);font-size:10px}
+.cr-tbl th.fh{text-align:left}
+.cr-tbl th.uh{background:var(--accent);color:var(--accent-ink);border-radius:4px 4px 0 0;font-weight:700}
+.cr-tbl td{padding:7px 8px;text-align:center;border-bottom:0.5px solid var(--g100);font-size:10px}
+.cr-tbl td.fd{text-align:left;font-weight:500}
+.cr-tbl td.ud{background:var(--g50)}
+.cr-ck{color:var(--accent);font-weight:700}
+.cr-cx{color:var(--g200)}
+
+/* ══ TEAM ══ */
+.cr-team-grid{display:grid;gap:8px;height:100%}
+.cr-tcard{border:0.5px solid var(--card-line);background:var(--card);border-radius:8px;padding:12px;display:flex;flex-direction:column}
+.cr-av{width:38px;height:38px;border-radius:50%;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:8px}
+.cr-nm{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700}
+.cr-rl{font-size:9px;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;margin:3px 0 6px}
+.cr-bio{font-size:10px;color:var(--g500);line-height:1.4}
+
+/* ══ TIMELINE (следующий период) ══ */
+.cr-tl{display:flex;gap:0;height:100%}
+.cr-tli{flex:1;padding-right:8px;padding-top:14px;border-top:3px solid var(--g200);position:relative}
+.cr-tli.next{border-top-color:var(--accent)}
+.cr-tl-dt{font-size:9px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.cr-tl-tt{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;margin:3px 0}
+.cr-tl-dd{font-size:9px;color:var(--g500);line-height:1.4}
+.cr-tl-foot{font-size:10px;color:var(--g500);line-height:1.6;white-space:pre-line}
+
+/* ══ DIAGRAM ══ */
+.cr-diagram-box{width:100%;height:100%;background:var(--g50);border:0.5px solid var(--card-line);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+
+/* ══ QUOTE ══ */
+.cr-qmark{font-family:'Outfit',sans-serif;font-size:50px;font-weight:800;color:var(--accent);opacity:.25;line-height:.6;text-align:center}
+.cr-qtext{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;line-height:1.4;text-align:center}
+.cr-qauth{font-size:10px;color:var(--g500);text-align:center;margin-top:8px}
+
+/* ══ IMAGE FULL ══ */
+.cr-img{width:100%;height:100%;object-fit:cover}
+.cr-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,0.85) 25%,transparent 100%)}
+
+/* ══ CLOSING (следующий период / итог) ══ */
+.cr-close-bg{position:absolute;inset:0;background:var(--b)}
+.cr-close-pill{font-family:'Outfit',sans-serif;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);text-align:center}
+.cr-close-h1{font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;line-height:1.15;text-align:center;color:var(--w)}
+.cr-close-body{font-size:11px;color:var(--g200);text-align:center;line-height:1.5}
+.cr-close-contacts{display:flex;gap:8px;justify-content:center}
+.cr-close-ct{font-size:10px;color:var(--w);background:rgba(255,255,255,.08);border:0.5px solid rgba(255,255,255,.15);padding:5px 14px;border-radius:20px}
+
+@media print{body{background:var(--w)}.slide{page-break-after:always}}
+</style>
+</head>
+<body class="scheme-{{ color_scheme | default('light') }}">
+
+{% if slides | selectattr('layout','equalto','diagram') | list %}
+<script>mermaid.initialize({startOnLoad:true,theme:'neutral',themeVariables:{fontSize:'11px'}});</script>
+{% endif %}
+
+{% for slide in slides %}
+<div class="slide">
+{% if watermark %}<div class="wm">FIBONACCI AI</div>{% endif %}
+
+{% if slide.layout.value == 'title' %}
+<div class="cr-bar"></div>
+<div class="zn" style="{{ zone_style(slide.layout,'eyebrow') }}"><div class="tag">{{ meta.presentation_type.value | replace('_',' ') | title }}{% if meta.date %} · {{ meta.date }}{% endif %}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}"><div class="cr-h1">{{ slide.title or meta.title }}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">{% if slide.subtitle or meta.subtitle %}<div class="cr-sub">{{ slide.subtitle or meta.subtitle }}</div>{% endif %}</div>
+<div class="zn" style="{{ zone_style(slide.layout,'image') }}">{% if slide.image_url %}<div class="cr-photo"><img src="{{ slide.image_url }}" alt=""></div>{% else %}<div class="cr-photo-ph"></div>{% endif %}</div>
+<div class="zn" style="{{ zone_style(slide.layout,'meta') }}">
+  <div class="cr-meta">
+    {% if meta.author %}<span>{{ meta.author }}</span>{% endif %}
+    {% if meta.company %}<span>{{ meta.company }}</span>{% endif %}
+  </div>
+</div>
+
+{% elif slide.layout.value in ('market', 'metrics', 'problem') %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="tag">Метрики</div>
+  <div class="cr-title">{{ slide.title }}</div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">{% if slide.subtitle %}<div class="cr-subtitle">{{ slide.subtitle }}</div>{% endif %}</div>
+<div class="zn" style="{{ zone_style(slide.layout,'metrics') }}">
+  <div class="cr-kpi-row">
+    {% for m in slide.metrics %}
+    <div class="cr-kpi">
+      <div>
+        <div class="cr-kpi-lbl">{{ m.label }}</div>
+        <div class="cr-kpi-val">{{ m.value }}</div>
+        {% if m.trend %}
+        {% set is_down = m.trend.startswith('-') %}
+        <div class="cr-kpi-tr {{ 'down' if is_down else 'up' }}">{{ m.trend }}</div>
+        {% endif %}
+      </div>
+      {% if m.source %}<div class="cr-kpi-src">{{ m.source }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'two_column' %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="tag">План vs факт</div>
+  <div class="cr-title">{{ slide.title }}</div>
+</div>
+{% if slide.two_column %}
+<div class="zn" style="{{ zone_style(slide.layout,'left') }}">
+  <div class="cr-col">
+    <div class="cr-col-h">{{ slide.two_column.left_title or 'План' }}</div>
+    {% if slide.two_column.left_text %}<div class="cr-col-txt">{{ slide.two_column.left_text }}</div>{% endif %}
+    <div class="cr-row">
+      {% for b in slide.two_column.left_bullets %}
+      <div class="cr-item"><div class="cr-item-dot"></div><div class="cr-item-t">{{ b.text }}</div></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'right') }}">
+  <div class="cr-col fact">
+    <div class="cr-col-h">{{ slide.two_column.right_title or 'Факт' }}</div>
+    {% if slide.two_column.right_text %}<div class="cr-col-txt">{{ slide.two_column.right_text }}</div>{% endif %}
+    <div class="cr-row">
+      {% for b in slide.two_column.right_bullets %}
+      <div class="cr-item"><div class="cr-item-dot"></div><div class="cr-item-t">{{ b.text }}</div></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value in ('bullets', 'why_now', 'solution') %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="tag">Проблемы и риски</div>
+  <div class="cr-title">{{ slide.title }}</div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">{% if slide.subtitle %}<div class="cr-subtitle">{{ slide.subtitle }}</div>{% endif %}</div>
+<div class="zn" style="{{ zone_style(slide.layout,'bullets') }}">
+  <div class="cr-problems">
+    {% for bullet in slide.bullets %}
+    <div class="cr-problem"><div class="cr-problem-t">{% if bullet.emphasis %}<strong>{{ bullet.text }}</strong>{% else %}{{ bullet.text }}{% endif %}</div></div>
+    {% endfor %}
+  </div>
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'competition' %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="tag">Сравнение</div>
+  <div class="cr-title">{{ slide.title or 'Сравнение' }}</div>
+</div>
+{% if slide.competition_table %}
+<div class="zn" style="{{ zone_style(slide.layout,'table') }}">
+  <table class="cr-tbl">
+    <thead><tr>
+      <th class="fh"></th>
+      <th class="uh">{{ slide.competition_table.our_name }}</th>
+      {% for comp in slide.competition_table.competitors %}<th>{{ comp.name }}</th>{% endfor %}
+    </tr></thead>
+    <tbody>
+      {% for feature in slide.competition_table.features %}
+      <tr>
+        <td class="fd">{{ feature.name }}</td>
+        <td class="ud"><span class="cr-ck">✓</span></td>
+        {% for comp in slide.competition_table.competitors %}
+        {% set val = feature.values.get(comp.name, 'no') %}
+        <td>{% if val == 'yes' %}<span class="cr-ck">✓</span>{% elif val == 'no' %}<span class="cr-cx">✗</span>{% else %}{{ val }}{% endif %}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'team' %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="tag">Команда</div>
+  <div class="cr-title">{{ slide.title or 'Команда' }}</div>
+</div>
+{% set cnt = [slide.team_members|length, 4]|min %}
+<div class="zn" style="{{ zone_style(slide.layout,'team') }}">
+  <div class="cr-team-grid" style="grid-template-columns:repeat({{ cnt if cnt > 0 else 1 }},1fr)">
+    {% for member in slide.team_members %}
+    <div class="cr-tcard">
+      <div class="cr-av">{% if member.photo_url %}<img src="{{ member.photo_url }}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">{% elif member.gender == 'female' %}👩{% else %}👨{% endif %}</div>
+      <div class="cr-nm">{{ member.name }}</div>
+      <div class="cr-rl">{{ member.role }}</div>
+      {% if member.bio %}<div class="cr-bio">{{ member.bio }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'timeline' %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="tag">Следующий период</div>
+  <div class="cr-title">{{ slide.title or 'План на следующий период' }}</div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'timeline') }}">
+  <div class="cr-tl">
+    {% for item in slide.timeline_items %}
+    <div class="cr-tli {% if loop.first %}next{% endif %}">
+      <div class="cr-tl-dt">{{ item.date }}</div>
+      <div class="cr-tl-tt">{{ item.title }}</div>
+      {% if item.description %}<div class="cr-tl-dd">{{ item.description }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% if slide.body_text %}
+<div class="zn" style="{{ zone_style(slide.layout,'footer_bars') }}"><div class="cr-tl-foot">{{ slide.body_text }}</div></div>
+{% endif %}
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'diagram' %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="tag">Схема</div>
+  <div class="cr-title" style="font-size:16px">{{ slide.title }}</div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'body') }}">{% if slide.body_text %}<div class="cr-col-txt">{{ slide.body_text }}</div>{% endif %}</div>
+<div class="zn" style="{{ zone_style(slide.layout,'diagram') }}">
+  <div class="cr-diagram-box">{% if slide.mermaid_code %}<div class="mermaid" style="font-size:10px">{{ slide.mermaid_code }}</div>{% endif %}</div>
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'quote' %}
+<div class="zn" style="{{ zone_style(slide.layout,'quote_mark') }}"><div class="cr-qmark">"</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'text') }}"><div class="cr-qtext">{{ slide.body_text }}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'author') }}">{% if slide.subtitle %}<div class="cr-qauth">— {{ slide.subtitle }}</div>{% endif %}</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'image_full' %}
+<div class="zn" style="{{ zone_style(slide.layout,'image') }}">
+  {% if slide.image_url %}<img class="cr-img" src="{{ slide.image_url }}" alt="">{% endif %}
+  <div class="cr-ov"></div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}"><div class="cr-title" style="font-size:22px;color:#fff;position:relative;z-index:2">{{ slide.title }}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">{% if slide.subtitle %}<div class="cr-subtitle" style="color:#ccc;position:relative;z-index:2">{{ slide.subtitle }}</div>{% endif %}</div>
+<div class="ft" style="z-index:3"><div class="ftb" style="color:#eee">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn" style="color:#eee">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'closing' %}
+<div class="cr-close-bg"></div>
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}"><div class="cr-close-pill">{{ slide.title or 'Итоги периода' }}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}"><div class="cr-close-h1">{{ slide.subtitle or 'Спасибо за внимание' }}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'body') }}">{% if slide.body_text %}<div class="cr-close-body">{{ slide.body_text }}</div>{% endif %}</div>
+<div class="zn" style="{{ zone_style(slide.layout,'contacts') }}">
+  <div class="cr-close-contacts">
+    {% if meta.author %}<div class="cr-close-ct">{{ meta.author }}</div>{% endif %}
+    {% if meta.company %}<div class="cr-close-ct">{{ meta.company }}</div>{% endif %}
+  </div>
+</div>
+
+{% endif %}
+</div>
+{% endfor %}
+
+</body>
+</html>
