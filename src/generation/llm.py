@@ -8,6 +8,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from config import settings
 from schemas.presentation import (
     PresentationSchema, UserRequest, PresentationType, AudienceType,
+    ContentVolume, ContentSourceType,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,8 @@ SYSTEM_PROMPT = """\
 3. mermaid_code — только для layout="diagram", валидный Mermaid-синтаксис.
 
 ТЕКУЩАЯ ДАТА: {current_date}. Используй её как отправную точку для роадмапа. Все этапы роадмапа — в будущем от этой даты, НЕ в прошлом.
+
+ОБЪЁМ КОНТЕНТА: {volume_instruction}
 
 ДАННЫЕ И ЦИФРЫ:
 - Используй реальные данные из своих знаний: рынки, статистику, исследования.
@@ -92,6 +95,7 @@ USER_PROMPT_TEMPLATE = Template("""\
 Язык: $language — ВСЕ тексты только на этом языке
 $slide_count_instruction
 $extra_instructions_block
+$source_material_block
 
 Контекст по типу:
 $type_context
@@ -101,6 +105,12 @@ $audience_context
 
 Верни только JSON.
 """)
+
+SOURCE_MATERIAL_BLOCK = Template("""\
+ВАЖНО: используй строго материал ниже как источник фактов. НЕ выдумывай данные и цифры сверх этого текста. Разрешено только добавлять структурные элементы — переходы, заголовки слайдов, логичную последовательность.
+
+МАТЕРИАЛ:
+$raw_text""")
 
 TYPE_CONTEXTS = {
     PresentationType.PITCH_DECK: "Питч для инвесторов. Структура строго по 11 слайдам выше. Акцент на цифрах, рынке, уникальности.",
@@ -119,6 +129,14 @@ AUDIENCE_CONTEXTS = {
     AudienceType.COLLEAGUES: "Коллеги знают контекст. Фокус на сути, решениях, следующих шагах.",
     AudienceType.MANAGEMENT: "Руководство: краткость и цифры. Выводы сначала, потом детали.",
     AudienceType.GENERAL: "Широкая аудитория. Простой язык, понятные аналогии.",
+    AudienceType.SCHOOLKIDS: "Простой язык, без жаргона и канцелярита, аналогии из повседневной жизни, короче предложения.",
+    AudienceType.FRIENDS: "Неформальный тон, можно юмор, минимум канцелярита, обращение на 'ты'.",
+}
+
+VOLUME_INSTRUCTIONS: dict[ContentVolume, str] = {
+    ContentVolume.SHORT: "Кратко. 2-3 bullet-пункта на слайд с bullets, body_text — 1-2 коротких предложения (до 150 символов).",
+    ContentVolume.MEDIUM: "Стандартный объём. 4-5 bullet-пунктов на слайд с bullets, body_text — 2-4 предложения (до 350 символов).",
+    ContentVolume.LONG: "Развёрнуто. 6 bullet-пунктов на слайд с bullets, body_text — подробный абзац (до 550 символов).",
 }
 
 
@@ -157,6 +175,11 @@ def _build_user_prompt(request: UserRequest) -> str:
     extra_block = ""
     if request.extra_instructions:
         extra_block = f"ВАЖНО — используй эти реальные данные:\n{request.extra_instructions}"
+
+    source_material_block = ""
+    if request.source_type != ContentSourceType.TOPIC and request.raw_text:
+        source_material_block = SOURCE_MATERIAL_BLOCK.substitute(raw_text=request.raw_text)
+
     return USER_PROMPT_TEMPLATE.substitute(
         topic=request.topic,
         presentation_type=request.presentation_type.value,
@@ -165,6 +188,7 @@ def _build_user_prompt(request: UserRequest) -> str:
         slide_count_hint=slide_count,
         slide_count_instruction=f"Количество слайдов: {slide_count} (строго).",
         extra_instructions_block=extra_block,
+        source_material_block=source_material_block,
         type_context=TYPE_CONTEXTS.get(request.presentation_type, ""),
         audience_context=AUDIENCE_CONTEXTS.get(request.audience, ""),
     )
@@ -194,6 +218,7 @@ async def generate_presentation_structure(request: UserRequest) -> PresentationS
         schema=_get_json_schema(),
         language=request.language,
         current_date=current_date,
+        volume_instruction=VOLUME_INSTRUCTIONS.get(request.content_volume, VOLUME_INSTRUCTIONS[ContentVolume.MEDIUM]),
     )
     user_prompt = _build_user_prompt(request)
 
