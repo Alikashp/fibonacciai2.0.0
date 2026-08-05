@@ -13,37 +13,51 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from schemas.presentation import PresentationSchema, PresentationType, Slide
+from schemas.presentation import PresentationSchema, PresentationType, Slide, SlideLayout
+from layouts.zones import get_zones
 
 logger = logging.getLogger(__name__)
 
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 
 # Маппинг типа презентации → папка шаблона
-# Пока все типы смотрят на pitch_deck — по мере добавления шаблонов расширяем
+# Пока не все типы имеют собственный шаблон — недостающие временно смотрят на pitch_deck
 TEMPLATE_MAP: dict[PresentationType, str] = {
     PresentationType.PITCH_DECK:   "pitch_deck",
     PresentationType.DIPLOMA:      "pitch_deck",   # TODO: diploma template
-    PresentationType.CORP_REPORT:  "pitch_deck",   # TODO: corp_report template
+    PresentationType.CORP_REPORT:  "corp_report",
     PresentationType.EDUCATIONAL:  "pitch_deck",   # TODO: educational template
     PresentationType.SALES:        "pitch_deck",
-    PresentationType.CONFERENCE:   "pitch_deck",
+    PresentationType.CONFERENCE:   "conference",
     PresentationType.ROADMAP:      "pitch_deck",
 }
 
 _env_cache: dict[str, Environment] = {}
 
 
+def zone_style(layout: SlideLayout, key: str) -> str:
+    """
+    Jinja-хелпер: inline CSS-позиционирование элемента слайда из реестра зон
+    (layouts/zones.py) — единый источник координат для HTML/CSS и (в будущем)
+    python-pptx рендерера. Возвращает пустую строку, если для layout/key зона
+    не зарегистрирована — элемент тогда просто не позиционируется абсолютно.
+    """
+    zone = get_zones(layout).zones.get(key)
+    return zone.as_style() if zone else ""
+
+
 def _get_env(template_folder: str) -> Environment:
     """Jinja2 Environment с кешем — не пересоздаём на каждый запрос."""
     if template_folder not in _env_cache:
         loader = FileSystemLoader(str(TEMPLATES_DIR / template_folder))
-        _env_cache[template_folder] = Environment(
+        env = Environment(
             loader=loader,
             autoescape=select_autoescape(["html"]),
             trim_blocks=True,
             lstrip_blocks=True,
         )
+        env.globals["zone_style"] = zone_style
+        _env_cache[template_folder] = env
     return _env_cache[template_folder]
 
 
