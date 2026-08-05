@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="{{ meta.language }}">
+<head>
+<meta charset="UTF-8">
+<title>{{ meta.title }}</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--W:794px;--H:446px}
+
+/* ══ Классическая (Classic Light) — дневная конференция ══ */
+body.scheme-light{
+  --w:#faf9f6;--b:#141414;--g50:#f1efe9;--g100:#e6e2d9;--g200:#d2ccbd;--g500:#847d6c;
+  --accent:#e05a2b;--accent-ink:#ffffff;--card:#ffffff;--card-line:#e6e2d9;
+}
+/* ══ Midnight — ночной keynote ══ */
+body.scheme-dark{
+  --w:#0b0b0f;--b:#f5f3ee;--g50:#16161c;--g100:#1e1e26;--g200:#33333e;--g500:#8f8f9c;
+  --accent:#ffa655;--accent-ink:#141008;--card:#151519;--card-line:#26262f;
+}
+/* ══ Forest — эко/устойчивое развитие ══ */
+body.scheme-forest{
+  --w:#0c1712;--b:#eaf6ef;--g50:#132018;--g100:#1a2b21;--g200:#2c4436;--g500:#8bab9b;
+  --accent:#4ade9e;--accent-ink:#062015;--card:#11201a;--card-line:#243b30;
+}
+/* ══ Ember — острая тема, дебаты ══ */
+body.scheme-ember{
+  --w:#170908;--b:#fbeee9;--g50:#20100e;--g100:#2a1613;--g200:#452321;--g500:#ab8580;
+  --accent:#ff5b3d;--accent-ink:#1a0503;--card:#1d0f0d;--card-line:#3a1c19;
+}
+
+body{font-family:'DM Sans',sans-serif;background:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.slide{width:var(--W);height:var(--H);background:var(--w);color:var(--b);overflow:hidden;position:relative;page-break-after:always;page-break-inside:avoid}
+.zn{position:absolute}
+.kicker{display:inline-block;font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.ft{position:absolute;bottom:10px;left:24px;right:24px;display:flex;justify-content:space-between;z-index:5}
+.ftb{font-family:'Outfit',sans-serif;font-size:8px;font-weight:700;color:var(--g200)}
+.ftn{font-size:8px;color:var(--g200)}
+{% if watermark %}.wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-family:'Outfit',sans-serif;font-size:64px;font-weight:900;color:rgba(255,255,255,0.045);white-space:nowrap;pointer-events:none;z-index:100;letter-spacing:.1em}{% endif %}
+
+/* ══ TITLE ══ */
+.cf-stage{position:absolute;inset:0;background:radial-gradient(60% 55% at 78% 30%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%)}
+.cf-eyebrow{font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+.cf-h1{font-family:'Outfit',sans-serif;font-size:40px;font-weight:900;line-height:1.02;letter-spacing:-.02em;margin-top:8px}
+.cf-sub{font-size:12px;color:var(--g500);line-height:1.5;margin-top:10px}
+.cf-photo{width:100%;height:100%;overflow:hidden;border-radius:10px}
+.cf-photo img{width:100%;height:100%;object-fit:cover}
+.cf-photo-ph{width:100%;height:100%;background:var(--g50);border:0.5px solid var(--card-line);border-radius:10px}
+.cf-meta{display:flex;gap:10px;align-items:center;border-top:0.5px solid var(--card-line);padding-top:8px;height:100%}
+.cf-meta span{font-size:9px;color:var(--g500);padding-right:10px;border-right:0.5px solid var(--card-line)}
+.cf-meta span:last-child{border-right:none}
+
+/* ══ Общие текстовые зоны ══ */
+.cf-title{font-family:'Outfit',sans-serif;font-size:24px;font-weight:900;line-height:1.12}
+.cf-subtitle{font-size:11px;color:var(--g500);line-height:1.5;margin-top:6px}
+
+/* ══ PROBLEM / IMAGE ══ */
+.cf-img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+.cf-img-ph{width:100%;height:100%;background:var(--g50);border:0.5px solid var(--card-line);border-radius:10px}
+.cf-metrics-col{display:flex;flex-direction:column;gap:8px;height:100%}
+.cf-stat{background:var(--card);border:0.5px solid var(--card-line);border-radius:10px;padding:12px 14px;flex:1;display:flex;flex-direction:column;justify-content:center}
+.cf-stat-val{font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;color:var(--accent);line-height:1}
+.cf-stat-lbl{font-size:10px;color:var(--g500);margin-top:4px}
+.cf-stat-src{font-size:8px;color:var(--g500);opacity:.7;margin-top:4px}
+
+/* ══ SOLUTION / BULLETS ══ */
+.cf-bullets{display:flex;flex-direction:column;gap:8px;height:100%;overflow:hidden}
+.cf-bul{display:flex;align-items:flex-start;gap:9px}
+.cf-bul-n{font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;color:var(--accent-ink);background:var(--accent);width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.cf-bul-t{font-size:11px;color:var(--b);line-height:1.5}
+.cf-bul-t strong{font-weight:700;color:var(--accent)}
+
+/* ══ MARKET / METRICS ══ */
+.cf-metric-row{display:flex;gap:8px;height:100%}
+.cf-mcard{flex:1;background:var(--card);border:0.5px solid var(--card-line);border-radius:10px;padding:14px;display:flex;flex-direction:column;justify-content:space-between}
+.cf-mcard.hi{background:var(--accent);border-color:var(--accent)}
+.cf-mcard.hi .cf-mv,.cf-mcard.hi .cf-ml{color:var(--accent-ink)}
+.cf-ml{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--g500)}
+.cf-mv{font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;margin:6px 0}
+.cf-mt{font-size:8px;background:var(--g100);color:var(--g500);display:inline-block;padding:2px 7px;border-radius:20px}
+.cf-msrc{font-size:8px;color:var(--g500);opacity:.7;border-top:0.5px solid var(--card-line);padding-top:6px;margin-top:8px}
+
+/* ══ TWO_COLUMN ══ */
+.cf-col{background:var(--card);border:0.5px solid var(--card-line);border-radius:10px;padding:14px;height:100%;display:flex;flex-direction:column;overflow:hidden}
+.cf-col-h{font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px}
+.cf-col-txt{font-size:10px;color:var(--g500);line-height:1.5;margin-bottom:8px}
+
+/* ══ COMPETITION ══ */
+.cf-tbl{width:100%;border-collapse:collapse}
+.cf-tbl th{padding:6px 8px;text-align:center;font-weight:500;color:var(--g500);border-bottom:0.5px solid var(--card-line);font-size:10px}
+.cf-tbl th.fh{text-align:left}
+.cf-tbl th.uh{background:var(--accent);color:var(--accent-ink);border-radius:6px 6px 0 0;font-weight:700}
+.cf-tbl td{padding:7px 8px;text-align:center;border-bottom:0.5px solid var(--g100);font-size:10px}
+.cf-tbl td.fd{text-align:left;font-weight:500}
+.cf-tbl td.ud{background:var(--g50)}
+.cf-ck{color:var(--accent);font-weight:700}
+.cf-cx{color:var(--g200)}
+
+/* ══ TEAM ══ */
+.cf-team-grid{display:grid;gap:8px;height:100%}
+.cf-tcard{border:0.5px solid var(--card-line);background:var(--card);border-radius:10px;padding:12px;display:flex;flex-direction:column}
+.cf-av{width:40px;height:40px;border-radius:50%;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:8px}
+.cf-nm{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700}
+.cf-rl{font-size:9px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin:3px 0 6px}
+.cf-bio{font-size:10px;color:var(--g500);line-height:1.4}
+
+/* ══ TIMELINE ══ */
+.cf-tl{display:flex;gap:0;height:100%}
+.cf-tli{flex:1;padding-right:8px;position:relative;padding-top:16px;border-top:2px solid var(--card-line)}
+.cf-tli.now{border-top-color:var(--accent)}
+.cf-tl-dt{font-size:9px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.cf-tl-tt{font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;margin:3px 0}
+.cf-tl-dd{font-size:9px;color:var(--g500);line-height:1.4}
+
+/* ══ DIAGRAM ══ */
+.cf-diagram-box{width:100%;height:100%;background:var(--g50);border:0.5px solid var(--card-line);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+
+/* ══ QUOTE ══ */
+.cf-qmark{font-family:'Outfit',sans-serif;font-size:56px;font-weight:900;color:var(--accent);opacity:.3;line-height:.6;text-align:center}
+.cf-qtext{font-family:'Outfit',sans-serif;font-size:19px;font-weight:700;line-height:1.4;text-align:center}
+.cf-qauth{font-size:11px;color:var(--g500);text-align:center;margin-top:10px}
+
+/* ══ IMAGE FULL ══ */
+.if-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.88) 25%,transparent 100%)}
+
+/* ══ CLOSING ══ */
+.cf-close-pill{font-family:'Outfit',sans-serif;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);text-align:center}
+.cf-close-h1{font-family:'Outfit',sans-serif;font-size:32px;font-weight:900;line-height:1.1;text-align:center}
+.cf-close-body{font-size:12px;color:var(--g500);text-align:center;line-height:1.5}
+.cf-close-contacts{display:flex;gap:8px;justify-content:center}
+.cf-close-ct{font-size:10px;color:var(--b);background:var(--card);border:0.5px solid var(--card-line);padding:5px 14px;border-radius:20px}
+
+@media print{body{background:var(--w)}.slide{page-break-after:always}}
+</style>
+</head>
+<body class="scheme-{{ color_scheme | default('light') }}">
+
+{% if slides | selectattr('layout','equalto','diagram') | list %}
+<script>mermaid.initialize({startOnLoad:true,theme:'neutral',themeVariables:{fontSize:'11px'}});</script>
+{% endif %}
+
+{% for slide in slides %}
+<div class="slide">
+{% if watermark %}<div class="wm">FIBONACCI AI</div>{% endif %}
+
+{% if slide.layout.value == 'title' %}
+<div class="cf-stage"></div>
+<div class="zn" style="{{ zone_style(slide.layout,'eyebrow') }}"><div class="cf-eyebrow">{{ meta.presentation_type.value | replace('_',' ') | title }}{% if meta.date %} · {{ meta.date }}{% endif %}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="cf-h1">{{ slide.title or meta.title }}</div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">
+  {% if slide.subtitle or meta.subtitle %}<div class="cf-sub">{{ slide.subtitle or meta.subtitle }}</div>{% endif %}
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'image') }}">
+  {% if slide.image_url %}<div class="cf-photo"><img src="{{ slide.image_url }}" alt=""></div>{% else %}<div class="cf-photo-ph"></div>{% endif %}
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'meta') }}">
+  <div class="cf-meta">
+    {% if meta.author %}<span>{{ meta.author }}</span>{% endif %}
+    {% if meta.company %}<span>{{ meta.company }}</span>{% endif %}
+  </div>
+</div>
+
+{% elif slide.layout.value in ('problem',) %}
+<div class="zn" style="{{ zone_style(slide.layout,'image') }}">
+  {% if slide.image_url %}<img class="cf-img" src="{{ slide.image_url }}" alt="">{% else %}<div class="cf-img-ph"></div>{% endif %}
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="kicker">Контекст</div>
+  <div class="cf-title">{{ slide.title }}</div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">
+  {% if slide.subtitle %}<div class="cf-subtitle">{{ slide.subtitle }}</div>{% endif %}
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'metrics') }}">
+  <div class="cf-metrics-col">
+    {% for m in slide.metrics %}
+    <div class="cf-stat">
+      <div class="cf-stat-val">{{ m.value }}</div>
+      <div class="cf-stat-lbl">{{ m.label }}</div>
+      {% if m.source or m.trend %}<div class="cf-stat-src">{{ m.source or m.trend }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value in ('solution', 'bullets', 'why_now') %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="kicker">{% if slide.layout.value == 'solution' %}Идея{% else %}Ключевые тезисы{% endif %}</div>
+  <div class="cf-title">{{ slide.title }}</div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">
+  {% if slide.subtitle %}<div class="cf-subtitle">{{ slide.subtitle }}</div>{% endif %}
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'bullets') }}">
+  <div class="cf-bullets">
+    {% for bullet in slide.bullets %}
+    <div class="cf-bul">
+      <div class="cf-bul-n">{{ loop.index }}</div>
+      <div class="cf-bul-t">{% if bullet.emphasis %}<strong>{{ bullet.text }}</strong>{% else %}{{ bullet.text }}{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% if slide.layout.value == 'solution' %}
+<div class="zn" style="{{ zone_style(slide.layout,'image') }}">
+  {% if slide.image_url %}<img class="cf-img" src="{{ slide.image_url }}" alt="">{% else %}<div class="cf-img-ph"></div>{% endif %}
+</div>
+{% endif %}
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value in ('market', 'metrics') %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="kicker">Доказательства</div>
+  <div class="cf-title">{{ slide.title }}</div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">
+  {% if slide.subtitle %}<div class="cf-subtitle">{{ slide.subtitle }}</div>{% endif %}
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'metrics') }}">
+  <div class="cf-metric-row">
+    {% for m in slide.metrics %}
+    <div class="cf-mcard {% if loop.last %}hi{% endif %}">
+      <div>
+        <div class="cf-ml">{{ m.label }}</div>
+        <div class="cf-mv">{{ m.value }}</div>
+        {% if m.trend %}<div class="cf-mt">{{ m.trend }}</div>{% endif %}
+      </div>
+      {% if m.source %}<div class="cf-msrc">{{ m.source }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'two_column' %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="kicker">Сравнение</div>
+  <div class="cf-title">{{ slide.title }}</div>
+</div>
+{% if slide.two_column %}
+<div class="zn" style="{{ zone_style(slide.layout,'left') }}">
+  <div class="cf-col">
+    {% if slide.two_column.left_title %}<div class="cf-col-h">{{ slide.two_column.left_title }}</div>{% endif %}
+    {% if slide.two_column.left_text %}<div class="cf-col-txt">{{ slide.two_column.left_text }}</div>{% endif %}
+    <div class="cf-bullets">
+      {% for b in slide.two_column.left_bullets %}
+      <div class="cf-bul"><div class="cf-bul-n">{{ loop.index }}</div><div class="cf-bul-t">{{ b.text }}</div></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'right') }}">
+  <div class="cf-col">
+    {% if slide.two_column.right_title %}<div class="cf-col-h">{{ slide.two_column.right_title }}</div>{% endif %}
+    {% if slide.two_column.right_text %}<div class="cf-col-txt">{{ slide.two_column.right_text }}</div>{% endif %}
+    <div class="cf-bullets">
+      {% for b in slide.two_column.right_bullets %}
+      <div class="cf-bul"><div class="cf-bul-n">{{ loop.index }}</div><div class="cf-bul-t">{{ b.text }}</div></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'competition' %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="kicker">Сравнение подходов</div>
+  <div class="cf-title">{{ slide.title or 'Сравнение' }}</div>
+</div>
+{% if slide.competition_table %}
+<div class="zn" style="{{ zone_style(slide.layout,'table') }}">
+  <table class="cf-tbl">
+    <thead><tr>
+      <th class="fh"></th>
+      <th class="uh">{{ slide.competition_table.our_name }}</th>
+      {% for comp in slide.competition_table.competitors %}<th>{{ comp.name }}</th>{% endfor %}
+    </tr></thead>
+    <tbody>
+      {% for feature in slide.competition_table.features %}
+      <tr>
+        <td class="fd">{{ feature.name }}</td>
+        <td class="ud"><span class="cf-ck">✓</span></td>
+        {% for comp in slide.competition_table.competitors %}
+        {% set val = feature.values.get(comp.name, 'no') %}
+        <td>{% if val == 'yes' %}<span class="cf-ck">✓</span>{% elif val == 'no' %}<span class="cf-cx">✗</span>{% else %}{{ val }}{% endif %}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'team' %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="kicker">Спикеры</div>
+  <div class="cf-title">{{ slide.title or 'Команда' }}</div>
+</div>
+{% set cnt = [slide.team_members|length, 4]|min %}
+<div class="zn" style="{{ zone_style(slide.layout,'team') }}">
+  <div class="cf-team-grid" style="grid-template-columns:repeat({{ cnt if cnt > 0 else 1 }},1fr)">
+    {% for member in slide.team_members %}
+    <div class="cf-tcard">
+      <div class="cf-av">{% if member.photo_url %}<img src="{{ member.photo_url }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover">{% elif member.gender == 'female' %}👩{% else %}👨{% endif %}</div>
+      <div class="cf-nm">{{ member.name }}</div>
+      <div class="cf-rl">{{ member.role }}</div>
+      {% if member.bio %}<div class="cf-bio">{{ member.bio }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'timeline' %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="kicker">Что дальше</div>
+  <div class="cf-title">{{ slide.title or 'Дальнейшие шаги' }}</div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'timeline') }}">
+  <div class="cf-tl">
+    {% for item in slide.timeline_items %}
+    <div class="cf-tli {% if loop.index == 2 %}now{% endif %}">
+      <div class="cf-tl-dt">{{ item.date }}</div>
+      <div class="cf-tl-tt">{{ item.title }}</div>
+      {% if item.description %}<div class="cf-tl-dd">{{ item.description }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% if slide.body_text %}
+<div class="zn" style="{{ zone_style(slide.layout,'footer_bars') }}">
+  <div class="cf-col-txt" style="white-space:pre-line">{{ slide.body_text }}</div>
+</div>
+{% endif %}
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'diagram' %}
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">
+  <div class="kicker">Схема</div>
+  <div class="cf-title" style="font-size:18px">{{ slide.title }}</div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'body') }}">
+  {% if slide.body_text %}<div class="cf-col-txt">{{ slide.body_text }}</div>{% endif %}
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'diagram') }}">
+  <div class="cf-diagram-box">
+    {% if slide.mermaid_code %}<div class="mermaid" style="font-size:10px">{{ slide.mermaid_code }}</div>{% endif %}
+  </div>
+</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'quote' %}
+<div class="zn" style="{{ zone_style(slide.layout,'quote_mark') }}"><div class="cf-qmark">"</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'text') }}"><div class="cf-qtext">{{ slide.body_text }}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'author') }}">{% if slide.subtitle %}<div class="cf-qauth">— {{ slide.subtitle }}</div>{% endif %}</div>
+<div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'image_full' %}
+<div class="zn" style="{{ zone_style(slide.layout,'image') }}">
+  {% if slide.image_url %}<img class="cf-img" style="border-radius:0" src="{{ slide.image_url }}" alt="">{% endif %}
+  <div class="if-ov"></div>
+</div>
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}"><div class="cf-h1" style="font-size:24px;color:#fff;position:relative;z-index:2">{{ slide.title }}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">{% if slide.subtitle %}<div class="cf-sub" style="color:#ccc;position:relative;z-index:2">{{ slide.subtitle }}</div>{% endif %}</div>
+<div class="ft" style="z-index:3"><div class="ftb" style="color:#eee">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn" style="color:#eee">{{ slide.index }} / {{ slides|length }}</div></div>
+
+{% elif slide.layout.value == 'closing' %}
+<div class="cf-stage"></div>
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}"><div class="cf-close-pill">{{ slide.title or 'Спасибо' }}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}"><div class="cf-close-h1">{{ slide.subtitle or 'Вопросы?' }}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'body') }}">{% if slide.body_text %}<div class="cf-close-body">{{ slide.body_text }}</div>{% endif %}</div>
+<div class="zn" style="{{ zone_style(slide.layout,'contacts') }}">
+  <div class="cf-close-contacts">
+    {% if meta.author %}<div class="cf-close-ct">{{ meta.author }}</div>{% endif %}
+    {% if meta.company %}<div class="cf-close-ct">{{ meta.company }}</div>{% endif %}
+  </div>
+</div>
+
+{% endif %}
+</div>
+{% endfor %}
+
+</body>
+</html>
