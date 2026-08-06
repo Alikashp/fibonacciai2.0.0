@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+import uuid
 from pathlib import Path
 
 from aiogram import Bot, Dispatcher, F
@@ -11,23 +12,28 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import (
     Message, CallbackQuery,
     InlineKeyboardMarkup, InlineKeyboardButton,
-    BufferedInputFile, LabeledPrice, PreCheckoutQuery,
+    LabeledPrice, PreCheckoutQuery,
 )
+from arq import create_pool
+from arq.connections import ArqRedis, RedisSettings
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config import settings
 from schemas.presentation import UserRequest, PresentationType, AudienceType
-from generation.llm import generate_presentation_structure
-from generation.template_engine import render_presentation
-from generation.pdf_renderer import html_to_pdf
-from db.session import init_db, close_db, get_session, get_or_create_user, record_presentation, upgrade_user_plan
+from db.session import init_db, close_db, get_session, get_or_create_user, upgrade_user_plan
 from db.models import PlanType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 bot = Bot(token=settings.telegram_bot_token)
+
+# ── ARQ pool — соединение с очередью Redis, к которой обращается worker.py ────
+# Генерация (LLM → картинки → PDF) больше НЕ идёт в этом процессе: хендлер
+# только кладёт job в очередь и сразу отвечает пользователю. Реальная работа —
+# в worker.py (запускается отдельным процессом: `arq worker.WorkerSettings`).
+arq_pool: ArqRedis | None = None
 dp = Dispatcher(storage=MemoryStorage())
 
 # ── Цены в Telegram Stars ─────────────────────────────────────────────────────
@@ -124,14 +130,6 @@ def kb_brief() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="⚡ Пропустить", callback_data="brief:skip"),
-        ],
-    ])
-
-
-def kb_after_pdf() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="🔄 Новая презентация", callback_data="action:new"),
         ],
     ])
 
@@ -508,19 +506,22 @@ async def _confirm_and_generate(message: Message, data: dict, state: FSMContext)
 
 
 # ── Генерация ─────────────────────────────────────────────────────────────────
+# Хендлер больше не генерирует презентацию сам — он кладёт job в очередь ARQ
+# (worker.py, отдельный процесс) и сразу отвечает. Это единственная причина,
+# по которой бот не виснет на 60-90 секунд генерации и продолжает отвечать на
+# /start, /plan и прочие команды других пользователей, пока одна презентация
+# ещё готовится.
 
 async def generate_and_send(message: Message, data: dict, watermark: bool = True):
-    status_msg = await message.answer("⚙️ Генерирую структуру слайдов...")
+    brief = data.get("brief")
+    extra = None
+    if brief:
+        extra = (
+            f"ВАЖНО — используй эти реальные данные:\n\n{brief}\n\n"
+            f"Вставляй точно: имена, цифры, контакты."
+        )
 
     try:
-        brief = data.get("brief")
-        extra = None
-        if brief:
-            extra = (
-                f"ВАЖНО — используй эти реальные данные:\n\n{brief}\n\n"
-                f"Вставляй точно: имена, цифры, контакты."
-            )
-
         request = UserRequest(
             topic=data["topic"],
             presentation_type=PresentationType(data["presentation_type"]),
@@ -528,76 +529,54 @@ async def generate_and_send(message: Message, data: dict, watermark: bool = True
             language=data["language"],
             extra_instructions=extra,
         )
-
-        await status_msg.edit_text("⚙️ Пишу текст слайдов...")
-        presentation = await generate_presentation_structure(request)
-
-        await status_msg.edit_text("⚙️ Подбираю изображения...")
-        from generation.image_fetcher import fetch_images_for_slides
-        image_urls = await fetch_images_for_slides(presentation.slides)
-
-        await status_msg.edit_text("⚙️ Собираю дизайн...")
-        color_scheme = data.get("color_scheme", "light")
-        html = render_presentation(presentation, image_urls=image_urls, watermark=watermark, color_scheme=color_scheme)
-
-        await status_msg.edit_text("⚙️ Рендерю PDF...")
-        has_mermaid = any(s.layout.value == "diagram" for s in presentation.slides)
-        pdf_bytes = await html_to_pdf(html, has_mermaid=has_mermaid)
-
-        # Записываем в БД
-        async with get_session() as session:
-            if session:
-                user = await get_or_create_user(session, message.chat.id)
-                await record_presentation(
-                    session,
-                    user=user,
-                    topic=data["topic"],
-                    presentation_type=data["presentation_type"],
-                    audience=data["audience"],
-                    language=data["language"],
-                    slide_count=presentation.slide_count,
-                    has_brief=bool(data.get("brief")),
-                    watermark=watermark,
-                )
-
-        await status_msg.delete()
-
-        safe_title = "".join(
-            c if c.isalnum() or c in " _-" else "_"
-            for c in presentation.meta.title
-        )[:40]
-
-        caption = (
-            f"✨ <b>{presentation.meta.title}</b>\n"
-            f"{presentation.slide_count} слайдов · {TYPE_LABELS.get(data['presentation_type'], '')}"
-        )
-        if watermark:
-            caption += "\n\n<i>Бесплатная версия · Уберите водяной знак в /plan</i>"
-
-        await message.answer_document(
-            document=BufferedInputFile(pdf_bytes, filename=f"{safe_title}.pdf"),
-            caption=caption,
-            parse_mode="HTML",
-            reply_markup=kb_after_pdf(),
-        )
-
     except Exception as e:
-        logger.exception(f"Generation failed: {e}")
-        await status_msg.edit_text(
-            "❌ Что-то пошло не так. Попробуйте ещё раз через /new",
-            parse_mode="HTML",
-        )
+        logger.exception(f"Invalid request: {e}")
+        await message.answer("❌ Что-то пошло не так с параметрами. Попробуйте ещё раз через /new")
+        return
+
+    job_id = uuid.uuid4().hex[:12]
+
+    status_msg = await message.answer(
+        f"⏳ <b>Генерирую, обычно занимает 60–90 секунд.</b>\n"
+        f"Пришлю сюда же, как только будет готово.\n\n"
+        f"<code>job {job_id}</code>",
+        parse_mode="HTML",
+    )
+
+    if arq_pool is None:
+        logger.error("ARQ pool is not initialized — cannot enqueue job")
+        await status_msg.edit_text("❌ Очередь генерации сейчас недоступна. Попробуйте через минуту.")
+        return
+
+    await arq_pool.enqueue_job(
+        "generate_presentation_job",
+        job_id=job_id,
+        chat_id=message.chat.id,
+        user_id=message.chat.id,
+        status_message_id=status_msg.message_id,
+        request_data=request.model_dump(mode="json"),
+        document_bytes=None,
+        document_mime_type=None,
+        urls=None,
+        watermark=watermark,
+        color_scheme=data.get("color_scheme", "light"),
+        _job_id=job_id,
+    )
 
 
 # ── Запуск ────────────────────────────────────────────────────────────────────
 
 async def main():
-    from generation.pdf_renderer import get_renderer, shutdown_renderer
+    global arq_pool
 
     logger.info("Starting Fibonacci AI bot...")
     await init_db()
-    await get_renderer()
-    logger.info("Playwright ready")
+
+    # Playwright/LLM/S3 больше не живут в этом процессе — только очередь.
+    # Реальная генерация происходит в worker.py (`arq worker.WorkerSettings`),
+    # который нужно запускать отдельным процессом рядом с ботом.
+    arq_pool = await create_pool(RedisSettings.from_dsn(settings.redis_url))
+    logger.info("ARQ pool connected")
 
     try:
         await dp.start_polling(
@@ -605,7 +584,7 @@ async def main():
             allowed_updates=["message", "callback_query", "pre_checkout_query"],
         )
     finally:
-        await shutdown_renderer()
+        await arq_pool.aclose()
         await close_db()
         await bot.session.close()
 
