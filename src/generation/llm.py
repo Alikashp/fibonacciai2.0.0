@@ -43,20 +43,9 @@ SYSTEM_PROMPT = """\
 - Если точных данных нет — используй данные смежной отрасли с пометкой "оценочно".
 - НЕ пиши [ЦИФРА] — лучше реалистичный диапазон "$5-15B".
 
-СТРУКТУРА ПИТЧ-ДЕКА (строго 11 слайдов):
-1. title — название, подзаголовок. ОБЯЗАТЕЛЬНО image_query на английском (например: "modern startup office team" или "technology innovation abstract").
-2. problem — layout="problem", title = РЕАЛЬНЫЙ заголовок проблемы (не "Проблема"), subtitle = одно предложение. ОБЯЗАТЕЛЬНО: image_query на английском для фото слева. metrics: 2-3 цифры с source.
-3. solution — layout="solution", title = РЕАЛЬНЫЙ заголовок решения (не "Решение"), subtitle = одно предложение. ОБЯЗАТЕЛЬНО: image_query для фото справа. bullets: 3 преимущества. metrics: 2-3 результата.
-4. why_now — layout="bullets", title = "Почему сейчас?", subtitle = краткий контекст. bullets: 4 тренда, каждый формат "Название — объяснение в 1-2 предложения".
-5. market — layout="market", title = "Объём рынка", subtitle = методология расчёта. 3 метрики TAM/SAM/SOM с обязательным полем source (источник + расчёт).
-6. biz_model — layout="two_column". title = "Модель монетизации". two_column.left_title = тип модели через запятую (например: "Freemium, Подписка"). left_bullets: СТРОГО массив объектов формата {{"text": "Название — Цена", "emphasis": false}}. НЕ строки, только объекты. right_text = контекст о модели. БЕЗ юнит-экономики.
-7. traction — layout="metrics", title = "Трекшн", subtitle = контекст. 3 метрики прогресса (от прошлого к настоящему).
-8. competition — layout="competition". СТРОГО ОБЯЗАТЕЛЬНО заполнить competition_table. Ищи реальных конкурентов: прямых (те же функции), косвенных (альтернативные решения), или крупных игроков рынка. Если конкурентов действительно нет — напиши "Нет прямых конкурентов" в one из ячеек и объясни почему в title. МИНИМУМ 5 критериев сравнения. НИКОГДА не пиши "Competitor A/B/C".
-9. team — layout="team", 3-4 члена с gender (male/female), bio обязательно.
-10. roadmap — layout="timeline", 4 этапа + body_text с распределением инвестиций по строкам.
-11. closing — layout="closing", title = "Давайте работать вместе", subtitle = приглашение к диалогу или вопросы, body_text = условия инвестиций или следующий шаг.
+{structure_block}
 
-COMPETITION TABLE — СТРОГИЕ ПРАВИЛА:
+COMPETITION TABLE — СТРОГИЕ ПРАВИЛА (если структура выше требует layout="competition"):
 1. competitors: ТОЛЬКО реальные названия компаний на этом рынке. ЗАПРЕЩЕНО писать "Competitor A", "Конкурент 1" и любые заглушки.
 2. features: МИНИМУМ 5 критериев, релевантных для данной отрасли. Меньше 5 — ошибка.
 3. Ключи в values ДОЛЖНЫ точно совпадать с именами в competitors.
@@ -115,12 +104,68 @@ $raw_text""")
 TYPE_CONTEXTS = {
     PresentationType.PITCH_DECK: "Питч для инвесторов. Структура строго по 11 слайдам выше. Акцент на цифрах, рынке, уникальности.",
     PresentationType.DIPLOMA: "Защита дипломной работы. Структура: тема → цель → методология → результаты → выводы. Академический стиль.",
-    PresentationType.CORP_REPORT: "Корпоративный отчёт. Структура: резюме → метрики → план vs факт → проблемы → следующий период.",
+    PresentationType.CORP_REPORT: "Корпоративный отчёт. Структура строго по 9 слайдам выше. Резюме → метрики → план vs факт → проблемы → следующий период.",
     PresentationType.EDUCATIONAL: "Обучающая презентация. Структура: введение → концепции → примеры → практика → резюме.",
     PresentationType.SALES: "Коммерческое предложение. Структура: боль → решение → преимущества → кейсы → условия → CTA.",
-    PresentationType.CONFERENCE: "Доклад на конференции. Структура: тезис → контекст → ключевые идеи → доказательства → выводы.",
+    PresentationType.CONFERENCE: "Доклад на конференции. Структура строго по 9 слайдам выше. Тезис → контекст → ключевые идеи → доказательства → выводы.",
     PresentationType.ROADMAP: "Стратегия и роадмап. Структура: текущее состояние → цели → план по кварталам → ресурсы → результаты.",
 }
+
+# ── Жёсткая по-слайдовая структура для типов, где она уже задана ───────────────
+# Для типов, которых здесь нет, используется GENERIC_STRUCTURE_FALLBACK —
+# модель ориентируется на TYPE_CONTEXTS выше, но не тянет за собой форму
+# питч-дека. Добавляйте сюда новые типы по мере готовности их структуры
+# (см. Sprint 1, задача про conference/corp_report).
+
+STRUCTURE_BLOCKS: dict[PresentationType, str] = {
+
+    PresentationType.PITCH_DECK: """\
+СТРУКТУРА ПИТЧ-ДЕКА (строго 11 слайдов):
+1. title — название, подзаголовок. ОБЯЗАТЕЛЬНО image_query на английском (например: "modern startup office team" или "technology innovation abstract").
+2. problem — layout="problem", title = РЕАЛЬНЫЙ заголовок проблемы (не "Проблема"), subtitle = одно предложение. ОБЯЗАТЕЛЬНО: image_query на английском для фото слева. metrics: 2-3 цифры с source.
+3. solution — layout="solution", title = РЕАЛЬНЫЙ заголовок решения (не "Решение"), subtitle = одно предложение. ОБЯЗАТЕЛЬНО: image_query для фото справа. bullets: 3 преимущества. metrics: 2-3 результата.
+4. why_now — layout="bullets", title = "Почему сейчас?", subtitle = краткий контекст. bullets: 4 тренда, каждый формат "Название — объяснение в 1-2 предложения".
+5. market — layout="market", title = "Объём рынка", subtitle = методология расчёта. 3 метрики TAM/SAM/SOM с обязательным полем source (источник + расчёт).
+6. biz_model — layout="two_column". title = "Модель монетизации". two_column.left_title = тип модели через запятую (например: "Freemium, Подписка"). left_bullets: СТРОГО массив объектов формата {"text": "Название — Цена", "emphasis": false}. НЕ строки, только объекты. right_text = контекст о модели. БЕЗ юнит-экономики.
+7. traction — layout="metrics", title = "Трекшн", subtitle = контекст. 3 метрики прогресса (от прошлого к настоящему).
+8. competition — layout="competition". СТРОГО ОБЯЗАТЕЛЬНО заполнить competition_table. Ищи реальных конкурентов: прямых (те же функции), косвенных (альтернативные решения), или крупных игроков рынка. Если конкурентов действительно нет — напиши "Нет прямых конкурентов" в one из ячеек и объясни почему в title. МИНИМУМ 5 критериев сравнения. НИКОГДА не пиши "Competitor A/B/C".
+9. team — layout="team", 3-4 члена с gender (male/female), bio обязательно.
+10. roadmap — layout="timeline", 4 этапа + body_text с распределением инвестиций по строкам.
+11. closing — layout="closing", title = "Давайте работать вместе", subtitle = приглашение к диалогу или вопросы, body_text = условия инвестиций или следующий шаг.""",
+
+    PresentationType.CONFERENCE: """\
+СТРУКТУРА ДОКЛАДА НА КОНФЕРЕНЦИИ (строго 9 слайдов):
+1. title — layout="title". Тезис доклада: конкретное, спорное или неожиданное утверждение в заголовке, НЕ просто тема ("Мы теряем 40% инженеров на онбординге" вместо "О найме"). ОБЯЗАТЕЛЬНО image_query на английском.
+2. context — layout="bullets" (или "quote", если есть сильная цитата/факт-затравка). title = формулировка проблемы/контекста. Почему это важно аудитории именно сейчас — 1 предложение в subtitle.
+3. idea1 — layout="bullets". title = формулировка ключевой идеи 1. bullets: 3-4 аргумента.
+4. proof1 — layout="metrics" (реальные цифры с source) или "diagram" (mermaid-схема механизма/процесса) — доказательство к идее 1.
+5. idea2 — layout="bullets". title = формулировка ключевой идеи 2. bullets: 3-4 аргумента.
+6. proof2 — layout="metrics" или "diagram" — доказательство к идее 2 (используй другой вариант, чем в шаге 4, если возможно — не повторяй одинаковый layout дважды подряд без причины).
+7. idea3 — layout="bullets" (либо "two_column" для сравнения "было / стало", "до / после"). Третья, обычно самая практичная, идея доклада.
+8. takeaway — layout="quote". Главный вывод доклада одной фразой в body_text. subtitle = автор/спикер.
+9. closing — layout="closing". Конкретный призыв к действию: что аудитории сделать после доклада (написать, попробовать, задать вопрос в кулуарах).""",
+
+    PresentationType.CORP_REPORT: """\
+СТРУКТУРА КОРПОРАТИВНОГО ОТЧЁТА (строго 9 слайдов):
+1. title — layout="title". Резюме периода одной строкой в заголовке (например: "Q1 2026: выручка +18%, издержки -6%"), НЕ просто "Отчёт за Q1".
+2. kpi — layout="metrics". title = "Ключевые метрики" (или конкретнее). 3 метрики периода, у каждой обязательно trend (рост/падение, знак важен) и source.
+3. plan_vs_fact — layout="two_column". two_column.left_title = "План", right_title = "Факт". left/right_bullets — сопоставимые пункты, расхождения называй прямо, без приукрашивания.
+4. wins — layout="bullets". title = "Достижения" (или конкретнее). bullets: 3-5 пунктов, что сработало за период.
+5. risks — layout="bullets". title = "Проблемы и риски". bullets: 3-5 пунктов, честно и конкретно, без размытых формулировок вроде "есть отдельные сложности".
+6. dynamics — layout="metrics" (операционные показатели, воронка) или "diagram" (mermaid-схема процесса/пайплайна). Доказательства к динамике периода.
+7. next_period — layout="timeline". 3-4 этапа плана на следующий период с датами.
+8. quote — layout="quote". Комментарий руководителя: body_text = прямая цитата, subtitle = имя и должность.
+9. closing — layout="closing". Итог периода и конкретные следующие шаги для получателей отчёта.""",
+
+}
+
+GENERIC_STRUCTURE_FALLBACK = (
+    "Явной пошаговой структуры (по слайдам) для этого типа презентации пока нет — "
+    "ориентируйся на \"Контекст по типу\" в пользовательском сообщении ниже. "
+    "Выбирай layout каждого слайда по смыслу его контента "
+    "(problem/solution/bullets/market/metrics/two_column/competition/team/timeline/diagram/quote/image_full), "
+    "НЕ копируй бездумно форму питч-дека."
+)
 
 AUDIENCE_CONTEXTS = {
     AudienceType.INVESTORS: "Инвесторы хотят: рынок, бизнес-модель, тракшн, команду. Язык ROI и масштабируемости. Цифры важнее слов.",
@@ -146,18 +191,18 @@ def _get_json_schema() -> str:
     "title": "string", "subtitle": "string|null", "author": "string|null",
     "company": "string|null", "date": "string|null", "language": "ru|en|uz|kk|es|ar|zh|de",
     "presentation_type": "pitch_deck|diploma|corp_report|educational|sales|conference|roadmap",
-    "audience": "investors|clients|students|colleagues|management|general",
+    "audience": "investors|clients|students|colleagues|management|general|schoolkids|friends",
     "color_scheme": "default"
   },
   "slides": [{
     "index": 1,
     "layout": "title|problem|solution|bullets|market|metrics|two_column|competition|team|timeline|diagram|quote|image_full|closing",
     "title": "string|null", "subtitle": "string|null", "body_text": "string|null",
-    "bullets": [{{"text": "string", "emphasis": false}}],
+    "bullets": [{"text": "string", "emphasis": false}],
     "metrics": [{"value": "string", "label": "string", "trend": "string|null", "source": "string|null"}],
     "team_members": [{"name": "string", "role": "string", "bio": "string|null", "gender": "male|female"}],
     "timeline_items": [{"date": "string", "title": "string", "description": "string|null"}],
-    "two_column": {"left_title": "string|null", "left_text": "string|null", "left_bullets": [{{"text": "string", "emphasis": false}}], "right_title": "string|null", "right_text": "string|null", "right_bullets": [{{"text": "string", "emphasis": false}}]},
+    "two_column": {"left_title": "string|null", "left_text": "string|null", "left_bullets": [{"text": "string", "emphasis": false}], "right_title": "string|null", "right_text": "string|null", "right_bullets": [{"text": "string", "emphasis": false}]},
     "competition_table": {
       "our_name": "string",
       "competitors": [{"name": "string"}],
@@ -198,10 +243,10 @@ def _default_slide_count(presentation_type: PresentationType) -> int:
     defaults = {
         PresentationType.PITCH_DECK:  11,
         PresentationType.DIPLOMA:     12,
-        PresentationType.CORP_REPORT: 10,
+        PresentationType.CORP_REPORT: 9,   # держим в шаге с STRUCTURE_BLOCKS[CORP_REPORT]
         PresentationType.EDUCATIONAL: 12,
         PresentationType.SALES:       10,
-        PresentationType.CONFERENCE:  10,
+        PresentationType.CONFERENCE:  9,   # держим в шаге с STRUCTURE_BLOCKS[CONFERENCE]
         PresentationType.ROADMAP:     11,
     }
     return defaults.get(presentation_type, 10)
@@ -219,6 +264,7 @@ async def generate_presentation_structure(request: UserRequest) -> PresentationS
         language=request.language,
         current_date=current_date,
         volume_instruction=VOLUME_INSTRUCTIONS.get(request.content_volume, VOLUME_INSTRUCTIONS[ContentVolume.MEDIUM]),
+        structure_block=STRUCTURE_BLOCKS.get(request.presentation_type, GENERIC_STRUCTURE_FALLBACK),
     )
     user_prompt = _build_user_prompt(request)
 
