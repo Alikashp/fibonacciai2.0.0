@@ -115,6 +115,7 @@ async def generate_presentation_job(
             image_urls=image_urls,
             watermark=watermark,
             color_scheme=color_scheme,
+            source_type=request.source_type,
         )
 
         await _status("⚙️ Рендерю PDF...")
