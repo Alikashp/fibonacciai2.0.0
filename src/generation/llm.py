@@ -109,6 +109,11 @@ TYPE_CONTEXTS = {
     PresentationType.SALES: "Коммерческое предложение. Структура: боль → решение → преимущества → кейсы → условия → CTA.",
     PresentationType.CONFERENCE: "Доклад на конференции. Структура строго по 9 слайдам выше. Тезис → контекст → ключевые идеи → доказательства → выводы.",
     PresentationType.ROADMAP: "Стратегия и роадмап. Структура: текущее состояние → цели → план по кварталам → ресурсы → результаты.",
+    # DOKLAD: реальное значение НЕ читается отсюда — оно веткой считается в
+    # _doklad_type_context() внутри _build_user_prompt() в зависимости от
+    # request.source_type. Запись здесь — просто документированный дефолт
+    # на случай, если кто-то обратится к TYPE_CONTEXTS[DOKLAD] напрямую.
+    PresentationType.DOKLAD: "Доклад. Контекст веткой зависит от source_type — см. _doklad_type_context().",
 }
 
 # ── Жёсткая по-слайдовая структура для типов, где она уже задана ───────────────
@@ -159,6 +164,55 @@ STRUCTURE_BLOCKS: dict[PresentationType, str] = {
 
 }
 
+# DOKLAD — единственный тип, где даже жёсткая по-слайдовая структура (не
+# только TYPE_CONTEXTS) зависит от source_type, а не только от
+# presentation_type: "доклад с нуля по теме" и "доклад по проделанной
+# работе на основе присланного материала" — это структурно разные вещи
+# (см. _pick_structure_block() ниже и template_engine.DOKLAD_TEMPLATE_BY_SOURCE,
+# где та же развилка определяет ещё и выбор HTML-шаблона).
+
+STRUCTURE_BLOCKS_DOKLAD_BY_SOURCE: dict[ContentSourceType, str] = {
+
+    ContentSourceType.TOPIC: """\
+СТРУКТУРА УЧЕБНОГО/ОЗНАКОМИТЕЛЬНОГО ДОКЛАДА (строго 9 слайдов):
+1. title — layout="title". Тема доклада простыми словами, без канцелярита.
+2. context — layout="bullets". Зачем это знать: где эта тема встречается в жизни/практике аудитории. 2-3 пункта.
+3. concept1 — layout="bullets". Первая часть темы: объясни через логику и понятную аналогию, НЕ через цифры/статистику.
+4. example1 — layout="diagram" (mermaid-схема механизма, если применимо) или "image_full" (наглядная иллюстрация) — конкретный пример к concept1.
+5. concept2 — layout="bullets". Вторая часть темы, тем же простым языком.
+6. example2 — layout="quote" (запоминающийся факт или аналогия одной фразой) или "diagram".
+7. common_mistakes — layout="bullets". Частые заблуждения или вопросы по теме — что люди обычно понимают неверно.
+8. summary — layout="bullets". Краткое резюме: 3-4 главные мысли доклада.
+9. closing — layout="closing". Что сделать дальше: попробовать/почитать/спросить.""",
+
+    ContentSourceType.TEXT: """\
+СТРУКТУРА ОТЧЁТНОГО ДОКЛАДА ПО ГОТОВОМУ МАТЕРИАЛУ (строго 9 слайдов):
+1. title — layout="title". Резюме проделанной работы одной строкой (НЕ "Доклад", а конкретный итог).
+2. context — layout="bullets" или "quote". Какая была задача/цель — из материала.
+3. done — layout="bullets". Что сделано: конкретные пункты СТРОГО из присланного материала.
+4. results — layout="metrics" (если в материале есть цифры, с source) или "bullets" (если цифр нет — НЕ выдумывай их).
+5. results2 — layout="diagram" (если в материале описан процесс/механизм) или "bullets" — дополнительные результаты.
+6. difficulties — layout="bullets". Сложности по ходу работы и как их решали — из материала, без приукрашивания.
+7. lessons — layout="quote". Главный вывод/урок одной фразой.
+8. next_steps — layout="timeline". Следующие шаги — 3-4 пункта.
+9. closing — layout="closing". Итог и приглашение к вопросам.""",
+
+}
+# URL и DOCUMENT ведут себя так же, как TEXT — это тоже "готовый материал",
+# просто с другим способом его получения (см. _pick_structure_block()).
+STRUCTURE_BLOCKS_DOKLAD_BY_SOURCE[ContentSourceType.DOCUMENT] = STRUCTURE_BLOCKS_DOKLAD_BY_SOURCE[ContentSourceType.TEXT]
+STRUCTURE_BLOCKS_DOKLAD_BY_SOURCE[ContentSourceType.URL] = STRUCTURE_BLOCKS_DOKLAD_BY_SOURCE[ContentSourceType.TEXT]
+
+
+def _pick_structure_block(request: UserRequest) -> str:
+    if request.presentation_type == PresentationType.DOKLAD:
+        return STRUCTURE_BLOCKS_DOKLAD_BY_SOURCE.get(
+            request.source_type,
+            STRUCTURE_BLOCKS_DOKLAD_BY_SOURCE[ContentSourceType.TOPIC],
+        )
+    return STRUCTURE_BLOCKS.get(request.presentation_type, GENERIC_STRUCTURE_FALLBACK)
+
+
 GENERIC_STRUCTURE_FALLBACK = (
     "Явной пошаговой структуры (по слайдам) для этого типа презентации пока нет — "
     "ориентируйся на \"Контекст по типу\" в пользовательском сообщении ниже. "
@@ -178,6 +232,40 @@ AUDIENCE_CONTEXTS = {
     AudienceType.FRIENDS: "Неформальный тон, можно юмор, минимум канцелярита, обращение на 'ты'.",
 }
 
+# Аудитории, для которых DOKLAD+topic-ветка дополнительно усиливает
+# требование к простоте языка (сверх того, что уже даёт AUDIENCE_CONTEXTS
+# само по себе) — см. _doklad_type_context().
+_DOKLAD_SIMPLIFY_AUDIENCES = (AudienceType.SCHOOLKIDS, AudienceType.STUDENTS)
+
+
+def _doklad_type_context(request: UserRequest) -> str:
+    """
+    TYPE_CONTEXTS для DOKLAD не статичен — ветка зависит от source_type
+    (см. Sprint: "Задача 1. Новый тип DOKLAD с веткой по source_type").
+    """
+    if request.source_type == ContentSourceType.TOPIC:
+        text = (
+            "Учебный/ознакомительный доклад. Простое объяснение темы для аудитории, "
+            "которая только знакомится с вопросом. Не выдумывай псевдо-исследовательские "
+            "цифры без источника — лучше объяснение через логику и примеры, чем фейковая статистика."
+        )
+        if request.audience in _DOKLAD_SIMPLIFY_AUDIENCES:
+            text += (
+                " ОСОБЕННО ВАЖНО для этой аудитории: максимально простой язык, короткие "
+                "предложения, конкретная бытовая аналогия на каждую идею, никакого термина "
+                "без немедленного объяснения простыми словами тут же."
+            )
+        return text
+
+    # TEXT / DOCUMENT / URL — доклад по уже готовому материалу, не с нуля.
+    return (
+        "Отчётный доклад по готовому материалу — НЕ учебный и НЕ питч-дек. "
+        "Используй строго материал из блока МАТЕРИАЛ ниже как источник фактов, "
+        "не выдумывай данные сверх него. Структура отчётная: "
+        "что сделано → результаты → сложности → следующие шаги."
+    )
+
+
 VOLUME_INSTRUCTIONS: dict[ContentVolume, str] = {
     ContentVolume.SHORT: "Кратко. 2-3 bullet-пункта на слайд с bullets, body_text — 1-2 коротких предложения (до 150 символов).",
     ContentVolume.MEDIUM: "Стандартный объём. 4-5 bullet-пунктов на слайд с bullets, body_text — 2-4 предложения (до 350 символов).",
@@ -190,7 +278,7 @@ def _get_json_schema() -> str:
   "meta": {
     "title": "string", "subtitle": "string|null", "author": "string|null",
     "company": "string|null", "date": "string|null", "language": "ru|en|uz|kk|es|ar|zh|de",
-    "presentation_type": "pitch_deck|diploma|corp_report|educational|sales|conference|roadmap",
+    "presentation_type": "pitch_deck|diploma|corp_report|educational|sales|conference|roadmap|doklad",
     "audience": "investors|clients|students|colleagues|management|general|schoolkids|friends",
     "color_scheme": "default"
   },
@@ -225,6 +313,11 @@ def _build_user_prompt(request: UserRequest) -> str:
     if request.source_type != ContentSourceType.TOPIC and request.raw_text:
         source_material_block = SOURCE_MATERIAL_BLOCK.substitute(raw_text=request.raw_text)
 
+    if request.presentation_type == PresentationType.DOKLAD:
+        type_context = _doklad_type_context(request)
+    else:
+        type_context = TYPE_CONTEXTS.get(request.presentation_type, "")
+
     return USER_PROMPT_TEMPLATE.substitute(
         topic=request.topic,
         presentation_type=request.presentation_type.value,
@@ -234,7 +327,7 @@ def _build_user_prompt(request: UserRequest) -> str:
         slide_count_instruction=f"Количество слайдов: {slide_count} (строго).",
         extra_instructions_block=extra_block,
         source_material_block=source_material_block,
-        type_context=TYPE_CONTEXTS.get(request.presentation_type, ""),
+        type_context=type_context,
         audience_context=AUDIENCE_CONTEXTS.get(request.audience, ""),
     )
 
@@ -248,6 +341,7 @@ def _default_slide_count(presentation_type: PresentationType) -> int:
         PresentationType.SALES:       10,
         PresentationType.CONFERENCE:  9,   # держим в шаге с STRUCTURE_BLOCKS[CONFERENCE]
         PresentationType.ROADMAP:     11,
+        PresentationType.DOKLAD:      9,   # держим в шаге со STRUCTURE_BLOCKS_DOKLAD_BY_SOURCE
     }
     return defaults.get(presentation_type, 10)
 
@@ -264,7 +358,7 @@ async def generate_presentation_structure(request: UserRequest) -> PresentationS
         language=request.language,
         current_date=current_date,
         volume_instruction=VOLUME_INSTRUCTIONS.get(request.content_volume, VOLUME_INSTRUCTIONS[ContentVolume.MEDIUM]),
-        structure_block=STRUCTURE_BLOCKS.get(request.presentation_type, GENERIC_STRUCTURE_FALLBACK),
+        structure_block=_pick_structure_block(request),
     )
     user_prompt = _build_user_prompt(request)
 
