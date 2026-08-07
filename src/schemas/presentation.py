@@ -11,6 +11,7 @@ class PresentationType(str, Enum):
     SALES        = "sales"
     CONFERENCE   = "conference"
     ROADMAP      = "roadmap"
+    DOKLAD       = "doklad"
 
 
 class AudienceType(str, Enum):
