@@ -24,6 +24,9 @@ UNSPLASH_ACCESS_KEY = os.getenv("UNSPLASH_ACCESS_KEY", "")
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 REDIS_URL = os.getenv("REDIS_URL", "")
 
+if not UNSPLASH_ACCESS_KEY and not PEXELS_API_KEY:
+    logger.error("Ни UNSPLASH_ACCESS_KEY, ни PEXELS_API_KEY не заданы — картинки к слайдам не будут подбираться")
+
 CACHE_TTL = 60 * 60 * 24  # 24 часа
 
 
@@ -156,6 +159,8 @@ async def fetch_image_url(query: str) -> Optional[str]:
     if url:
         await _cache_set(query, url)
         logger.info(f"Image fetched: '{query}' → {url[:60]}...")
+    else:
+        logger.warning(f"Изображение не найдено ни в Unsplash, ни в Pexels для '{query}'")
 
     return url
 
