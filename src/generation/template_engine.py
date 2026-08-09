@@ -58,6 +58,18 @@ def _pick_template_folder(
         )
     return TEMPLATE_MAP.get(presentation_type, "pitch_deck")
 
+
+PRESENTATION_TYPE_LABELS_RU: dict[PresentationType, str] = {
+    PresentationType.PITCH_DECK:   "Питч-дек",
+    PresentationType.DOKLAD:       "Тема",
+    PresentationType.CONFERENCE:   "Конференция",
+    PresentationType.CORP_REPORT:  "Отчёт",
+    PresentationType.DIPLOMA:      "Диплом",
+    PresentationType.EDUCATIONAL:  "Обучение",
+    PresentationType.SALES:        "Предложение",
+    PresentationType.ROADMAP:      "Стратегия",
+}
+
 _env_cache: dict[str, Environment] = {}
 
 
@@ -128,6 +140,7 @@ def render_presentation(
         slides=slides,
         watermark=watermark,
         color_scheme=color_scheme,
+        presentation_type_label=PRESENTATION_TYPE_LABELS_RU.get(presentation.meta.presentation_type, ""),
     )
 
     logger.info(
