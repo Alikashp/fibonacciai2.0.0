@@ -265,7 +265,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 <div class="s1-top">
   <div class="s1-logo">{{ meta.company or 'Fibonacci' }}<span>.</span></div>
   <div class="s1-badges">
-    <div class="s1-badge">{{ meta.presentation_type.value | replace('_',' ') | title }}</div>
+    <div class="s1-badge">{{ presentation_type_label }}</div>
     {% if meta.date %}<div class="s1-badge">{{ meta.date }}</div>{% endif %}
   </div>
 </div>
@@ -301,7 +301,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 </div>
 <div class="s2-content">
   <div class="tag">Проблема</div>
-  <div class="s2-title">{{ slide.title }}</div>
+  {% if slide.title %}<div class="s2-title">{{ slide.title }}</div>{% endif %}
   {% if slide.subtitle %}<div class="s2-subtitle">{{ slide.subtitle }}</div>{% endif %}
   <div class="s2-stats">
     {% for m in slide.metrics %}
@@ -323,7 +323,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 {% elif slide.layout.value == 'solution' %}
 <div class="s3-content">
   <div class="tag">Решение</div>
-  <div class="s3-h2">{{ slide.title }}</div>
+  {% if slide.title %}<div class="s3-h2">{{ slide.title }}</div>{% endif %}
   {% if slide.subtitle %}<div class="s3-subtitle">{{ slide.subtitle }}</div>{% endif %}
   {% for bullet in slide.bullets %}
   <div class="s3-item">
@@ -344,7 +344,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 {# ══ BULLETS (WHY NOW) ══ #}
 {% elif slide.layout.value == 'bullets' %}
 <div class="s4-hdr">
-  <div class="s4-h2">{{ slide.title }}</div>
+  {% if slide.title %}<div class="s4-h2">{{ slide.title }}</div>{% endif %}
   {% if slide.subtitle %}<div class="s4-desc">{{ slide.subtitle }}</div>{% endif %}
 </div>
 <div class="s4-grid">
@@ -420,7 +420,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 {# ══ TRACTION — вертикальная шкала ══ #}
 {% elif slide.layout.value == 'metrics' %}
 <div class="s7-hdr">
-  <div class="s7-h2">{{ slide.title }}</div>
+  {% if slide.title %}<div class="s7-h2">{{ slide.title }}</div>{% endif %}
   {% if slide.subtitle %}<div class="s7-desc">{{ slide.subtitle }}</div>{% endif %}
 </div>
 <div class="s7-timeline">
@@ -538,7 +538,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 {% elif slide.layout.value == 'diagram' %}
 <div class="dgl">
   <div class="tag">Схема</div>
-  <div class="dg-h2">{{ slide.title }}</div>
+  {% if slide.title %}<div class="dg-h2">{{ slide.title }}</div>{% endif %}
   {% if slide.body_text %}<div class="dg-body">{{ slide.body_text }}</div>{% endif %}
 </div>
 <div class="dgr">
@@ -551,7 +551,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 {# ══ QUOTE ══ #}
 {% elif slide.layout.value == 'quote' %}
 <div class="q-mark">"</div>
-<div class="q-text">{{ slide.body_text }}</div>
+{% if slide.body_text %}<div class="q-text">{{ slide.body_text }}</div>{% endif %}
 {% if slide.subtitle %}<div class="q-author">— <strong>{{ slide.subtitle }}</strong></div>{% endif %}
 <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
