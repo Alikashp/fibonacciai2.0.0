@@ -142,7 +142,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 
 {% if slide.layout.value == 'title' %}
 <div class="cr-bar"></div>
-<div class="zn" style="{{ zone_style(slide.layout,'eyebrow') }}"><div class="tag">{{ meta.presentation_type.value | replace('_',' ') | title }}{% if meta.date %} · {{ meta.date }}{% endif %}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'eyebrow') }}"><div class="tag">{{ presentation_type_label }}{% if meta.date %} · {{ meta.date }}{% endif %}</div></div>
 <div class="zn" style="{{ zone_style(slide.layout,'title') }}"><div class="cr-h1">{{ slide.title or meta.title }}</div></div>
 <div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">{% if slide.subtitle or meta.subtitle %}<div class="cr-sub">{{ slide.subtitle or meta.subtitle }}</div>{% endif %}</div>
 <div class="zn" style="{{ zone_style(slide.layout,'image') }}">{% if slide.image_url %}<div class="cr-photo"><img src="{{ slide.image_url }}" alt=""></div>{% else %}<div class="cr-photo-ph"></div>{% endif %}</div>
@@ -156,7 +156,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 {% elif slide.layout.value in ('market', 'metrics', 'problem') %}
 <div class="zn" style="{{ zone_style(slide.layout,'title') }}">
   <div class="tag">Метрики</div>
-  <div class="cr-title">{{ slide.title }}</div>
+  {% if slide.title %}<div class="cr-title">{{ slide.title }}</div>{% endif %}
 </div>
 <div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">{% if slide.subtitle %}<div class="cr-subtitle">{{ slide.subtitle }}</div>{% endif %}</div>
 <div class="zn" style="{{ zone_style(slide.layout,'metrics') }}">
@@ -181,7 +181,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 {% elif slide.layout.value == 'two_column' %}
 <div class="zn" style="{{ zone_style(slide.layout,'title') }}">
   <div class="tag">План vs факт</div>
-  <div class="cr-title">{{ slide.title }}</div>
+  {% if slide.title %}<div class="cr-title">{{ slide.title }}</div>{% endif %}
 </div>
 {% if slide.two_column %}
 <div class="zn" style="{{ zone_style(slide.layout,'left') }}">
@@ -211,8 +211,8 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 
 {% elif slide.layout.value in ('bullets', 'why_now', 'solution') %}
 <div class="zn" style="{{ zone_style(slide.layout,'title') }}">
-  <div class="tag">Проблемы и риски</div>
-  <div class="cr-title">{{ slide.title }}</div>
+  <div class="tag">{% if slide.index > 1 and slide.index < slides|length %}Шаг {{ slide.index - 1 }} из {{ slides|length - 2 }}{% endif %}</div>
+  {% if slide.title %}<div class="cr-title">{{ slide.title }}</div>{% endif %}
 </div>
 <div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">{% if slide.subtitle %}<div class="cr-subtitle">{{ slide.subtitle }}</div>{% endif %}</div>
 <div class="zn" style="{{ zone_style(slide.layout,'bullets') }}">
@@ -298,7 +298,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 {% elif slide.layout.value == 'diagram' %}
 <div class="zn" style="{{ zone_style(slide.layout,'title') }}">
   <div class="tag">Схема</div>
-  <div class="cr-title" style="font-size:16px">{{ slide.title }}</div>
+  {% if slide.title %}<div class="cr-title" style="font-size:16px">{{ slide.title }}</div>{% endif %}
 </div>
 <div class="zn" style="{{ zone_style(slide.layout,'body') }}">{% if slide.body_text %}<div class="cr-col-txt">{{ slide.body_text }}</div>{% endif %}</div>
 <div class="zn" style="{{ zone_style(slide.layout,'diagram') }}">
@@ -308,7 +308,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
 
 {% elif slide.layout.value == 'quote' %}
 <div class="zn" style="{{ zone_style(slide.layout,'quote_mark') }}"><div class="cr-qmark">"</div></div>
-<div class="zn" style="{{ zone_style(slide.layout,'text') }}"><div class="cr-qtext">{{ slide.body_text }}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'text') }}">{% if slide.body_text %}<div class="cr-qtext">{{ slide.body_text }}</div>{% endif %}</div>
 <div class="zn" style="{{ zone_style(slide.layout,'author') }}">{% if slide.subtitle %}<div class="cr-qauth">— {{ slide.subtitle }}</div>{% endif %}</div>
 <div class="ft"><div class="ftb">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
@@ -317,7 +317,7 @@ body{font-family:'DM Sans',sans-serif;background:#e8e8e4;-webkit-print-color-adj
   {% if slide.image_url %}<img class="cr-img" src="{{ slide.image_url }}" alt="">{% endif %}
   <div class="cr-ov"></div>
 </div>
-<div class="zn" style="{{ zone_style(slide.layout,'title') }}"><div class="cr-title" style="font-size:22px;color:#fff;position:relative;z-index:2">{{ slide.title }}</div></div>
+<div class="zn" style="{{ zone_style(slide.layout,'title') }}">{% if slide.title %}<div class="cr-title" style="font-size:22px;color:#fff;position:relative;z-index:2">{{ slide.title }}</div>{% endif %}</div>
 <div class="zn" style="{{ zone_style(slide.layout,'subtitle') }}">{% if slide.subtitle %}<div class="cr-subtitle" style="color:#ccc;position:relative;z-index:2">{{ slide.subtitle }}</div>{% endif %}</div>
 <div class="ft" style="z-index:3"><div class="ftb" style="color:#eee">{{ meta.company or 'Fibonacci' }}.</div><div class="ftn" style="color:#eee">{{ slide.index }} / {{ slides|length }}</div></div>
 
