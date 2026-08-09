@@ -273,11 +273,21 @@ async def cmd_new(message: Message, state: FSMContext):
 async def on_type(call: CallbackQuery, state: FSMContext):
     ptype = call.data.split(":")[1]
     await state.update_data(presentation_type=ptype)
+    if ptype == "doklad":
+        topic_prompt = (
+            "✏️ Напишите тему презентации.\n"
+            "<i>Например: «Как работает нейросеть простыми словами» — "
+            "или пришлите готовый текст/документ по теме на следующем шаге.</i>"
+        )
+    else:
+        topic_prompt = (
+            "✏️ Напишите тему презентации.\n"
+            "<i>Например: «Стартап по доставке еды для собак»</i>"
+        )
     try:
         await call.message.edit_text(
             f"Тип: <b>{TYPE_LABELS.get(ptype, ptype)}</b>\n\n"
-            "✏️ Напишите тему презентации.\n"
-            "<i>Например: «Стартап по доставке еды для собак»</i>",
+            f"{topic_prompt}",
             parse_mode="HTML",
         )
     except Exception:
