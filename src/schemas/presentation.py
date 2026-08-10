@@ -60,11 +60,11 @@ class MetricItem(BaseModel):
     value: str = Field(..., max_length=20)
     label: str = Field(..., max_length=80)
     trend: Optional[str] = Field(None, max_length=80)
-    source: Optional[str] = Field(None, max_length=200)
+    source: Optional[str] = Field(None, max_length=400)
 
 
 class BulletPoint(BaseModel):
-    text: str = Field(..., max_length=200)
+    text: str = Field(..., max_length=400)
     emphasis: bool = False
 
 
@@ -80,7 +80,7 @@ class TeamMember(BaseModel):
 class TimelineItem(BaseModel):
     date: str = Field(..., max_length=30)
     title: str = Field(..., max_length=100)
-    description: Optional[str] = Field(None, max_length=200)
+    description: Optional[str] = Field(None, max_length=300)
 
 
 class TwoColumnContent(BaseModel):
