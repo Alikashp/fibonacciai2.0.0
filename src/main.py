@@ -13,6 +13,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import (
     Message, CallbackQuery,
     InlineKeyboardMarkup, InlineKeyboardButton,
+    ReplyKeyboardMarkup, KeyboardButton,
     LabeledPrice, PreCheckoutQuery,
 )
 from arq import create_pool
@@ -71,6 +72,14 @@ def kb_types() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🚀 Питч-дек", callback_data="type:pitch_deck"),
             InlineKeyboardButton(text="🎤 Доклад",   callback_data="type:doklad"),
         ],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back")],
+    ])
+
+
+def kb_back() -> InlineKeyboardMarkup:
+    """Клавиатура с одной кнопкой 'Назад' — для шагов со свободным текстовым вводом."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back")],
     ])
 
 
@@ -88,6 +97,7 @@ def kb_audience() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🎓 Студенты",    callback_data="aud:students"),
             InlineKeyboardButton(text="🌍 Все",         callback_data="aud:general"),
         ],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back")],
     ])
 
 
@@ -101,6 +111,7 @@ def kb_language() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🇺🇿 O'zbek",     callback_data="lang:uz"),
             InlineKeyboardButton(text="🇰🇿 Қазақша",    callback_data="lang:kk"),
         ],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back")],
     ])
 
 
@@ -120,7 +131,21 @@ def kb_scheme(plan: str = "free") -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="🌿 Forest  🔒",    callback_data="scheme:locked")],
             [InlineKeyboardButton(text="🔥 Ember  🔒",     callback_data="scheme:locked")],
         ]
+    rows.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="back")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def kb_reply_menu() -> ReplyKeyboardMarkup:
+    """Постоянное меню под полем ввода — доступно в любой момент диалога,
+    включая середину онбординга (см. Task 2: не должно быть тупиков)."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🚀 Новая презентация")],
+            [KeyboardButton(text="💳 Тарифы")],
+            [KeyboardButton(text="❓ Помощь")],
+        ],
+        resize_keyboard=True,
+    )
 
 
 def kb_paywall() -> InlineKeyboardMarkup:
@@ -142,6 +167,33 @@ TYPE_LABELS = {
     "roadmap":     "Роадмап",
     "doklad":      "Доклад",
 }
+
+MENU_TEXT = "📋 <b>Меню</b>\n\nВыберите действие:"
+
+HELP_TEXT = (
+    "❓ <b>Что умеет Fibonacci AI</b>\n\n"
+    "Собираю презентацию в PDF за 60–90 секунд: питч-дек для инвесторов или доклад "
+    "на любую тему — с нуля по названию темы, или строго по вашему готовому тексту/документу.\n\n"
+    "Команды:\n"
+    "/new — начать новую презентацию\n"
+    "/plan — тарифы и лимит бесплатных презентаций\n"
+    "/menu — открыть это меню"
+)
+
+
+def _topic_prompt_text(ptype: str) -> str:
+    if ptype == "doklad":
+        topic_prompt = (
+            "✏️ Напишите тему презентации.\n"
+            "<i>Например: «Как работает нейросеть простыми словами» — "
+            "или пришлите готовый текст/документ по теме на следующем шаге.</i>"
+        )
+    else:
+        topic_prompt = (
+            "✏️ Напишите тему презентации.\n"
+            "<i>Например: «Стартап по доставке еды для собак»</i>"
+        )
+    return f"Тип: <b>{TYPE_LABELS.get(ptype, ptype)}</b>\n\n{topic_prompt}"
 
 AUDIENCE_LABELS = {
     "investors":  "Инвесторы",
@@ -196,7 +248,7 @@ ONBOARDING_QUESTIONS: dict[PresentationType, list[OnboardingQuestion]] = {
             key="has_material",
             kind="choice",
             prompt="📎 <b>У вас есть готовый текст или документ по теме?</b>\n\n<i>Если да — доклад соберём строго по вашему материалу, без выдумывания фактов.</i>",
-            choices=[("✅ Да, есть", "yes"), ("🆕 Нет, с нуля по теме", "no")],
+            choices=[("🆕 Нет, с нуля по теме", "no"), ("✅ Да, есть", "yes")],
         ),
     ],
 
@@ -231,13 +283,47 @@ async def cmd_start(message: Message, state: FSMContext):
         else:
             plan_info = ""
 
+    # Reply-клавиатура (постоянное меню) и inline-выбор типа — разные виды
+    # reply_markup, в одно сообщение оба не помещаются, поэтому два сообщения:
+    # первое закрепляет меню внизу экрана, второе — обычный шаг флоу.
     await message.answer(
-        f"👋 Привет! Я <b>Fibonacci AI</b> — создаю профессиональные презентации за 60 секунд.{plan_info}\n\n"
-        "Выберите тип презентации:",
+        f"👋 Привет! Я <b>Fibonacci AI</b> — создаю профессиональные презентации за 60 секунд.{plan_info}",
         parse_mode="HTML",
+        reply_markup=kb_reply_menu(),
+    )
+    await message.answer(
+        "Выберите тип презентации:",
         reply_markup=kb_types(),
     )
     await state.set_state(Gen.choosing_type)
+
+
+@dp.message(Command("menu"))
+async def cmd_menu(message: Message, state: FSMContext):
+    # /menu должна прерывать любой FSM state и не оставлять бота в тупике —
+    # поэтому всегда clear(), даже если пользователь застрял на середине
+    # онбординга (например, в цикле "слишком коротко").
+    await state.clear()
+    await message.answer(MENU_TEXT, parse_mode="HTML", reply_markup=kb_reply_menu())
+
+
+@dp.message(F.text == "🚀 Новая презентация")
+async def on_menu_new_presentation(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Выберите тип презентации:", reply_markup=kb_types())
+    await state.set_state(Gen.choosing_type)
+
+
+@dp.message(F.text == "💳 Тарифы")
+async def on_menu_plans(message: Message, state: FSMContext):
+    await state.clear()
+    await cmd_plan(message)
+
+
+@dp.message(F.text == "❓ Помощь")
+async def on_menu_help(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer(HELP_TEXT, parse_mode="HTML")
 
 
 @dp.message(Command("plan"))
@@ -273,22 +359,11 @@ async def cmd_new(message: Message, state: FSMContext):
 async def on_type(call: CallbackQuery, state: FSMContext):
     ptype = call.data.split(":")[1]
     await state.update_data(presentation_type=ptype)
-    if ptype == "doklad":
-        topic_prompt = (
-            "✏️ Напишите тему презентации.\n"
-            "<i>Например: «Как работает нейросеть простыми словами» — "
-            "или пришлите готовый текст/документ по теме на следующем шаге.</i>"
-        )
-    else:
-        topic_prompt = (
-            "✏️ Напишите тему презентации.\n"
-            "<i>Например: «Стартап по доставке еды для собак»</i>"
-        )
     try:
         await call.message.edit_text(
-            f"Тип: <b>{TYPE_LABELS.get(ptype, ptype)}</b>\n\n"
-            f"{topic_prompt}",
+            _topic_prompt_text(ptype),
             parse_mode="HTML",
+            reply_markup=kb_back(),
         )
     except Exception:
         pass
@@ -340,6 +415,14 @@ async def on_audience(call: CallbackQuery, state: FSMContext):
     await call.answer()
 
 
+async def _get_user_plan(user_id: int) -> str:
+    async with get_session() as session:
+        if session:
+            user = await get_or_create_user(session, user_id)
+            return user.plan
+    return "free"
+
+
 @dp.callback_query(F.data.startswith("lang:"))
 async def on_language(call: CallbackQuery, state: FSMContext):
     lang = call.data.split(":")[1]
@@ -352,12 +435,7 @@ async def on_language(call: CallbackQuery, state: FSMContext):
         await call.message.answer("Сессия устарела. Начнём заново:", reply_markup=kb_types())
         await state.set_state(Gen.choosing_type)
         return
-    # Получаем план пользователя для показа схем
-    user_plan = "free"
-    async with get_session() as session:
-        if session:
-            user = await get_or_create_user(session, call.from_user.id)
-            user_plan = user.plan
+    user_plan = await _get_user_plan(call.from_user.id)
 
     try:
         await call.message.edit_text(
@@ -384,6 +462,87 @@ async def on_scheme(call: CallbackQuery, state: FSMContext):
     await _ask_onboarding_question(call.message, data, state)
 
 
+# ── Кнопка "Назад" на каждом шаге ───────────────────────────────────────────────
+# Единый обработчик: смотрит на ТЕКУЩИЙ FSM state и решает, куда вернуться.
+# Данные предыдущих шагов не сбрасываются (state.update_data только добавляет
+# ключи) — при возврате назад и повторном движении вперёд ничего не теряется.
+
+@dp.callback_query(F.data == "back")
+async def on_back(call: CallbackQuery, state: FSMContext):
+    await call.answer()
+    current = await state.get_state()
+    data = await state.get_data()
+
+    async def _edit(text: str, reply_markup: InlineKeyboardMarkup) -> None:
+        try:
+            await call.message.edit_text(text, parse_mode="HTML", reply_markup=reply_markup)
+        except Exception:
+            await call.message.answer(text, parse_mode="HTML", reply_markup=reply_markup)
+
+    if current == Gen.choosing_type.state:
+        # Первый шаг онбординга — "Назад" ведёт в главное меню.
+        await state.clear()
+        await call.message.answer(MENU_TEXT, parse_mode="HTML", reply_markup=kb_reply_menu())
+        return
+
+    if current == Gen.entering_topic.state:
+        await _edit("Выберите тип презентации:", kb_types())
+        await state.set_state(Gen.choosing_type)
+        return
+
+    if current == Gen.choosing_audience.state:
+        ptype = data.get("presentation_type", "pitch_deck")
+        await _edit(_topic_prompt_text(ptype), kb_back())
+        await state.set_state(Gen.entering_topic)
+        return
+
+    if current == Gen.choosing_language.state:
+        await _edit("Кто будет смотреть презентацию?", kb_audience())
+        await state.set_state(Gen.choosing_audience)
+        return
+
+    if current == Gen.choosing_scheme.state:
+        await _edit("На каком языке делаем презентацию?", kb_language())
+        await state.set_state(Gen.choosing_language)
+        return
+
+    if current == Gen.onboarding.state:
+        idx = data.get("onboarding_index", 0)
+        if idx <= 0:
+            user_plan = await _get_user_plan(call.from_user.id)
+            await _edit(
+                "🎨 <b>Выберите цветовую схему</b>\n\n"
+                "<i>Midnight, Forest и Ember доступны на платном плане</i>",
+                kb_scheme(user_plan),
+            )
+            await state.set_state(Gen.choosing_scheme)
+        else:
+            try:
+                await call.message.edit_reply_markup(reply_markup=None)
+            except Exception:
+                pass
+            await state.update_data(onboarding_index=idx - 1)
+            data["onboarding_index"] = idx - 1
+            await _ask_onboarding_question(call.message, data, state)
+        return
+
+    if current == Gen.entering_material.state:
+        # has_material остаётся текущим вопросом — onboarding_index не двигали,
+        # когда уходили сюда (см. on_onboarding_choice), поэтому просто
+        # переспрашиваем тот же вопрос ещё раз.
+        try:
+            await call.message.edit_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+        await _ask_onboarding_question(call.message, data, state)
+        return
+
+    # Неизвестное/устаревшее состояние — не оставляем пользователя в тупике.
+    await state.clear()
+    await call.message.answer("Выберите тип презентации:", reply_markup=kb_types())
+    await state.set_state(Gen.choosing_type)
+
+
 # ── Онбординг — генерический раннер по ONBOARDING_QUESTIONS ───────────────────
 
 def _onboarding_questions(data: dict) -> list[OnboardingQuestion]:
@@ -403,17 +562,18 @@ async def _ask_onboarding_question(target: Message, data: dict, state: FSMContex
         return
 
     q = questions[idx]
+    rows: list[list[InlineKeyboardButton]] = []
     if q.kind == "choice":
-        kb = InlineKeyboardMarkup(inline_keyboard=[
+        rows = [
             [InlineKeyboardButton(text=label, callback_data=f"oq:{q.key}:{value}")]
             for label, value in (q.choices or [])
-        ])
+        ]
     elif q.skippable:
-        kb = InlineKeyboardMarkup(inline_keyboard=[
+        rows = [
             [InlineKeyboardButton(text=q.skip_label, callback_data=f"oq_skip:{q.key}")],
-        ])
-    else:
-        kb = None
+        ]
+    rows.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="back")])
+    kb = InlineKeyboardMarkup(inline_keyboard=rows)
 
     await target.answer(q.prompt, parse_mode="HTML", reply_markup=kb)
     await state.set_state(Gen.onboarding)
@@ -435,7 +595,8 @@ async def on_onboarding_choice(call: CallbackQuery, state: FSMContext):
     # отдельным шагом, а не продолжаем список вопросов линейно.
     if key == "has_material" and value == "yes":
         await call.message.answer(
-            "📎 Пришлите текст сообщением, или документ файлом (.pdf, .docx, .pptx, .txt)."
+            "📎 Пришлите текст сообщением, или документ файлом (.pdf, .docx, .pptx, .txt).",
+            reply_markup=kb_back(),
         )
         await state.set_state(Gen.entering_material)
         return
@@ -523,17 +684,19 @@ async def on_material(message: Message, state: FSMContext):
             document_bytes=document_bytes,
             document_mime_type=mime,
             raw_text=None,
+            last_short_text_error_msg_id=None,
         )
     elif message.text:
         text = message.text.strip()
         if len(text) < 20:
-            await message.answer("Слишком коротко — пришлите более развёрнутый текст (от 20 символов) или документ.")
+            await _report_short_text_error(message, state, data)
             return
         await state.update_data(
             source_type="text",
             raw_text=text[:15000],
             document_bytes=None,
             document_mime_type=None,
+            last_short_text_error_msg_id=None,
         )
     else:
         await message.answer("Пришлите текст сообщением или документ файлом.")
@@ -543,6 +706,55 @@ async def on_material(message: Message, state: FSMContext):
     data["onboarding_index"] = data.get("onboarding_index", 0) + 1
     await state.update_data(onboarding_index=data["onboarding_index"])
     await _ask_onboarding_question(message, data, state)
+
+
+# Повторная ошибка "слишком коротко" подряд — не спамим тем же текстом ещё раз,
+# а редактируем предыдущее сообщение об ошибке. Плюс кнопки, чтобы не оставлять
+# пользователя в тупике (тот же принцип, что и с "Назад" в задаче 1).
+_SHORT_TEXT_ERROR = "Слишком коротко — пришлите более развёрнутый текст (от 20 символов) или документ."
+
+
+def _kb_short_text_error() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✍️ Написать текст заново", callback_data="material_retry_text")],
+        [InlineKeyboardButton(text="📄 Загрузить файл", callback_data="material_retry_file")],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back")],
+    ])
+
+
+async def _report_short_text_error(message: Message, state: FSMContext, data: dict) -> None:
+    last_error_id = data.get("last_short_text_error_msg_id")
+    if last_error_id:
+        try:
+            await bot.edit_message_text(
+                _SHORT_TEXT_ERROR,
+                chat_id=message.chat.id,
+                message_id=last_error_id,
+                reply_markup=_kb_short_text_error(),
+            )
+            return
+        except Exception:
+            pass  # сообщение могли удалить — просто пришлём новое ниже
+    sent = await message.answer(_SHORT_TEXT_ERROR, reply_markup=_kb_short_text_error())
+    await state.update_data(last_short_text_error_msg_id=sent.message_id)
+
+
+@dp.callback_query(F.data == "material_retry_text")
+async def on_material_retry_text(call: CallbackQuery, state: FSMContext):
+    await call.answer()
+    await call.message.edit_text(
+        "✍️ Пришлите текст по теме сообщением (от 20 символов).",
+        reply_markup=kb_back(),
+    )
+
+
+@dp.callback_query(F.data == "material_retry_file")
+async def on_material_retry_file(call: CallbackQuery, state: FSMContext):
+    await call.answer()
+    await call.message.edit_text(
+        "📄 Пришлите документ файлом (.pdf, .docx, .pptx, .txt, до 20 МБ).",
+        reply_markup=kb_back(),
+    )
 
 
 @dp.callback_query(F.data == "action:new")
