@@ -249,24 +249,16 @@ class PresentationSchema(BaseModel):
         for i, slide in enumerate(slides, start=1):
             slide.index = i
 
-        # Наблюдали в проде (реальный сгенерированный PDF): модель иногда
-        # ставит layout на слайд, но не заполняет поле, которое этот layout
-        # реально рисует — title+subtitle есть, тело пустое. title/closing
-        # не проверяем: их ветки в шаблоне статичны и не зависят от полей
-        # слайда. Поднимаем ошибку валидации вместо тихой отправки пустого
-        # слайда пользователю — generate_presentation_structure() уже
-        # оборачивает вызов LLM в @retry (tenacity, до 3 попыток), так что
-        # это ValueError уводит в повторный вызов модели, а не в готовый
-        # PDF с дырой.
-        for slide in slides:
-            if slide.layout in (SlideLayout.TITLE, SlideLayout.CLOSING):
-                continue
-            if not _slide_has_required_content(slide):
-                raise ValueError(
-                    f"Slide {slide.index} (layout={slide.layout.value}) is missing the "
-                    f"content that layout actually renders (title/subtitle alone isn't enough)"
-                )
-
+        # ПРЕЖДЕ здесь стоял raise ValueError при пустом слайде, чтобы увести
+        # generate_presentation_structure() в retry (tenacity, до 3 попыток).
+        # На практике это оказалось хуже исходной проблемы: модель иногда
+        # СТАБИЛЬНО повторяет одну и ту же пустую формулировку конкретного
+        # слайда для конкретной темы на всех 3 попытках подряд (реальный
+        # прод-кейс — slide 5/two_column падал 3 раза с одной и той же
+        # ошибкой) — и вместо слайда с неидеальным содержимым пользователь
+        # не получал ВООБЩЕ НИЧЕГО, job падал целиком. Это заметно хуже.
+        # Диагностика (_slide_has_required_content) осталась — ей пользуется
+        # worker.py, который только логирует находку, не роняя генерацию.
         return slides
 
     @property
