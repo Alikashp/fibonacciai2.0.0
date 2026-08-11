@@ -31,7 +31,7 @@ from aiogram.types import BufferedInputFile, InlineKeyboardButton, InlineKeyboar
 from arq.connections import RedisSettings
 
 from config import settings
-from schemas.presentation import UserRequest, PresentationType, SlideLayout
+from schemas.presentation import UserRequest, PresentationType, SlideLayout, _slide_has_required_content
 from generation.content_extractor import extract_from_document, extract_from_url
 from generation.llm import generate_presentation_structure, _default_slide_count
 from generation.image_fetcher import fetch_images_for_slides
@@ -155,27 +155,27 @@ async def generate_presentation_job(
                 )
 
             # Слайд может иметь ПОДДЕРЖИВАЕМЫЙ layout (прошёл проверку выше) и
-            # всё равно оказаться визуально пустым, если модель не заполнила
-            # ни одного поля, которое реально рисует эта ветка шаблона — ровно
-            # так вышло со слайдом 3 в реальном PDF пользователя (layout прошёл
-            # молча, полей не было вообще). title/closing не проверяем — они
-            # по дизайну не зависят от полей слайда (title.value == "title"/
-            # "closing" всегда что-то показывает).
-            empty_slides = [
+            # всё равно оказаться визуально пустым или полупустым — либо ни
+            # одного поля вообще, либо title+subtitle есть, а само "тело"
+            # (bullets/metrics/two_column/mermaid_code/...), которое рисует
+            # именно ЭТОТ layout, пустое (реальный прод-кейс: title="Логика
+            # управления требованиями", subtitle="Понимание процесса",
+            # layout=two_column, two_column=None). Используем ТОТ ЖЕ чек,
+            # что раньше жёстко ронял валидацию (см. schemas/presentation.py)
+            # — теперь только логируем, не блокируя выдачу презентации:
+            # блокировка на практике била по надёжности сильнее, чем сам
+            # баг (модель может стабильно повторять пустой слайд все 3
+            # попытки retry, и пользователь не получал вообще ничего).
+            content_gap_slides = [
                 s for s in presentation.slides
                 if s.layout not in (SlideLayout.TITLE, SlideLayout.CLOSING)
-                and not (
-                    (s.title and s.title.strip()) or (s.subtitle and s.subtitle.strip())
-                    or (s.body_text and s.body_text.strip()) or s.bullets or s.metrics
-                    or s.timeline_items or s.two_column
-                    or (s.mermaid_code and s.mermaid_code.strip())
-                )
+                and not _slide_has_required_content(s)
             ]
-            if empty_slides:
+            if content_gap_slides:
                 logger.warning(
-                    f"DOKLAD job={job_id}: slide(s) have a supported layout but no "
-                    f"renderable fields at all — will show as a blank page apart from "
-                    f"the footer. " + "; ".join(_slide_debug(s) for s in empty_slides)
+                    f"DOKLAD job={job_id}: slide(s) have a supported layout but are "
+                    f"missing the specific field that layout renders — will show as a "
+                    f"blank or near-blank page. " + "; ".join(_slide_debug(s) for s in content_gap_slides)
                 )
 
         # ФИО/группа докладчика — не от модели, а из профиля пользователя в
