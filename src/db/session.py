@@ -7,6 +7,7 @@ import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from db.models import Base, User, Presentation, PlanType
@@ -48,6 +49,12 @@ async def init_db() -> None:
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # create_all не добавляет колонки в уже существующие таблицы —
+        # на Railway база уже развёрнута, поэтому новые nullable-колонки
+        # добавляем сами. Без Alembic (см. models.py) это самый простой
+        # безопасный вариант: IF NOT EXISTS делает операцию идемпотентной.
+        await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS author_name VARCHAR(150)"))
+        await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS author_group VARCHAR(150)"))
 
     logger.info("Database initialized")
 
@@ -99,6 +106,18 @@ async def get_or_create_user(
         if first_name and user.first_name != first_name:
             user.first_name = first_name
     return user
+
+
+async def update_user_profile(
+    session: AsyncSession,
+    user: User,
+    author_name: str | None,
+    author_group: str | None,
+) -> None:
+    """Сохраняет ФИО/группу докладчика из профиля бота (main.py)."""
+    user.author_name = author_name
+    user.author_group = author_group
+    await session.flush()
 
 
 async def record_presentation(
