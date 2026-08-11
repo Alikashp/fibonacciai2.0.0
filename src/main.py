@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from config import settings
 from schemas.presentation import PresentationType
-from db.session import init_db, close_db, get_session, get_or_create_user, upgrade_user_plan
+from db.session import init_db, close_db, get_session, get_or_create_user, upgrade_user_plan, update_user_profile
 from db.models import PlanType
 
 logging.basicConfig(level=logging.INFO)
@@ -56,6 +56,14 @@ class Gen(StatesGroup):
     choosing_scheme   = State()
     onboarding        = State()  # генерическое состояние для ONBOARDING_QUESTIONS
     entering_material = State()  # DOKLAD: пользователь шлёт текст/документ по теме
+
+
+class Profile(StatesGroup):
+    """ФИО/группа докладчика для титульного и финального слайдов DOKLAD.
+    Не завязан на Gen — отдельный, самостоятельный маленький флоу, вызываемый
+    из постоянного меню в любой момент (см. kb_reply_menu)."""
+    entering_name  = State()
+    entering_group = State()
 
 
 # ── Клавиатуры ────────────────────────────────────────────────────────────────
@@ -141,11 +149,17 @@ def kb_reply_menu() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="🚀 Новая презентация")],
-            [KeyboardButton(text="💳 Тарифы")],
+            [KeyboardButton(text="👤 Профиль"), KeyboardButton(text="💳 Тарифы")],
             [KeyboardButton(text="❓ Помощь")],
         ],
         resize_keyboard=True,
     )
+
+
+def _kb_profile_skip(callback_data: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="⚡ Пропустить", callback_data=callback_data)],
+    ])
 
 
 def kb_paywall() -> InlineKeyboardMarkup:
@@ -324,6 +338,103 @@ async def on_menu_plans(message: Message, state: FSMContext):
 async def on_menu_help(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(HELP_TEXT, parse_mode="HTML")
+
+
+# ── Профиль докладчика (ФИО / группа) ───────────────────────────────────────
+# Отдельный маленький флоу, не связанный с Gen — доступен в любой момент из
+# постоянного меню. Значения сохраняются в БД и подставляются в
+# PresentationMeta.author_name/author_group для DOKLAD в worker.py — сама
+# модель их не заполняет.
+
+_PROFILE_FIELD_MAX = 150
+
+
+@dp.message(F.text == "👤 Профиль")
+async def on_menu_profile(message: Message, state: FSMContext):
+    await state.clear()
+    async with get_session() as session:
+        current_name = None
+        if session:
+            user = await get_or_create_user(session, message.from_user.id)
+            current_name = user.author_name
+            current_group = user.author_group
+        else:
+            current_group = None
+
+    current_line = ""
+    if current_name or current_group:
+        parts = [p for p in (current_name, current_group) if p]
+        current_line = f"\n\nСейчас указано: <b>{' | '.join(parts)}</b>"
+
+    await message.answer(
+        "👤 <b>Профиль докладчика</b>\n\n"
+        "ФИО и группа/организация будут на титульном и финальном слайде доклада. "
+        f"Необязательно.{current_line}\n\nУкажите ФИО:",
+        parse_mode="HTML",
+        reply_markup=_kb_profile_skip("profile_skip_name"),
+    )
+    await state.set_state(Profile.entering_name)
+
+
+async def _ask_profile_group(target: Message, state: FSMContext) -> None:
+    await target.answer(
+        "Укажите группу или организацию:",
+        reply_markup=_kb_profile_skip("profile_skip_group"),
+    )
+    await state.set_state(Profile.entering_group)
+
+
+@dp.message(Profile.entering_name)
+async def on_profile_name_text(message: Message, state: FSMContext):
+    text = (message.text or "").strip()[:_PROFILE_FIELD_MAX]
+    await state.update_data(author_name=text or None)
+    await _ask_profile_group(message, state)
+
+
+@dp.callback_query(F.data == "profile_skip_name")
+async def on_profile_skip_name(call: CallbackQuery, state: FSMContext):
+    await call.answer()
+    try:
+        await call.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    await state.update_data(author_name=None)
+    await _ask_profile_group(call.message, state)
+
+
+async def _save_profile_and_confirm(target: Message, state: FSMContext, user_id: int, author_group: str | None) -> None:
+    data = await state.get_data()
+    author_name = data.get("author_name")
+    await state.clear()
+
+    async with get_session() as session:
+        if session:
+            user = await get_or_create_user(session, user_id)
+            await update_user_profile(session, user, author_name, author_group)
+
+    parts = [p for p in (author_name, author_group) if p]
+    summary = f"\n\n<b>{' | '.join(parts)}</b>" if parts else "\n\nПоля не заполнены — доклад будет без подписи."
+    await target.answer(
+        f"✅ Профиль сохранён.{summary}",
+        parse_mode="HTML",
+        reply_markup=kb_reply_menu(),
+    )
+
+
+@dp.message(Profile.entering_group)
+async def on_profile_group_text(message: Message, state: FSMContext):
+    text = (message.text or "").strip()[:_PROFILE_FIELD_MAX]
+    await _save_profile_and_confirm(message, state, message.from_user.id, text or None)
+
+
+@dp.callback_query(F.data == "profile_skip_group")
+async def on_profile_skip_group(call: CallbackQuery, state: FSMContext):
+    await call.answer()
+    try:
+        await call.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    await _save_profile_and_confirm(call.message, state, call.from_user.id, None)
 
 
 @dp.message(Command("plan"))
