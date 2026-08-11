@@ -31,7 +31,7 @@ from aiogram.types import BufferedInputFile, InlineKeyboardButton, InlineKeyboar
 from arq.connections import RedisSettings
 
 from config import settings
-from schemas.presentation import UserRequest
+from schemas.presentation import UserRequest, PresentationType
 from generation.content_extractor import extract_from_document, extract_from_url
 from generation.llm import generate_presentation_structure
 from generation.image_fetcher import fetch_images_for_slides
@@ -106,6 +106,21 @@ async def generate_presentation_job(
         await _status("⚙️ Пишу текст слайдов...")
         presentation = await generate_presentation_structure(request)
 
+        # ФИО/группа докладчика — не от модели, а из профиля пользователя в
+        # боте (см. main.py, "👤 Профиль"). Только для DOKLAD: это единственный
+        # шаблон, который их рендерит (title/closing слайды).
+        if request.presentation_type == PresentationType.DOKLAD:
+            async with get_session() as session:
+                if session:
+                    profile_user = await get_or_create_user(session, user_id)
+                    if profile_user.author_name or profile_user.author_group:
+                        presentation = presentation.model_copy(update={
+                            "meta": presentation.meta.model_copy(update={
+                                "author_name": profile_user.author_name,
+                                "author_group": profile_user.author_group,
+                            })
+                        })
+
         await _status("⚙️ Подбираю изображения...")
         image_urls = await fetch_images_for_slides(presentation.slides)
 
@@ -115,7 +130,6 @@ async def generate_presentation_job(
             image_urls=image_urls,
             watermark=watermark,
             color_scheme=color_scheme,
-            source_type=request.source_type,
         )
 
         await _status("⚙️ Рендерю PDF...")
