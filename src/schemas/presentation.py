@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Callable, Optional
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
@@ -189,6 +189,52 @@ class PresentationMeta(BaseModel):
     author_group: Optional[str] = None
 
 
+def _has_two_column_content(slide: "Slide") -> bool:
+    tc = slide.two_column
+    return bool(tc) and bool(
+        tc.left_bullets or tc.right_bullets
+        or (tc.left_text and tc.left_text.strip())
+        or (tc.right_text and tc.right_text.strip())
+    )
+
+
+# Требование к КОНКРЕТНОМУ полю, которое реально рисует каждый layout —
+# просто "хоть что-то заполнено" пропускало слайды вида "title+subtitle
+# есть, а bullets/metrics/two_column/mermaid_code пустые" (см. прод: PDF,
+# где title="Логика управления требованиями" и subtitle="Понимание
+# процесса" — и больше НИЧЕГО, тело слайда пустое). Явно перечислены
+# только layout'ы с однозначным "главным" полем по LAYOUT_CATALOG
+# (llm.py); для остальных (problem/solution/market/team/competition —
+# используются в pitch_deck со своей жёсткой структурой, где точный набор
+# полей не так однозначен) — общая проверка "хоть что-то из содержательных
+# полей заполнено", как было раньше.
+_LAYOUT_REQUIRES: dict[SlideLayout, Callable[["Slide"], bool]] = {
+    SlideLayout.BULLETS:    lambda s: bool(s.bullets),
+    SlideLayout.WHY_NOW:    lambda s: bool(s.bullets),
+    SlideLayout.METRICS:    lambda s: bool(s.metrics),
+    SlideLayout.TWO_COLUMN: _has_two_column_content,
+    SlideLayout.DIAGRAM:    lambda s: bool(s.mermaid_code and s.mermaid_code.strip()),
+    SlideLayout.QUOTE:      lambda s: bool(s.body_text and s.body_text.strip()),
+    SlideLayout.TIMELINE:   lambda s: bool(s.timeline_items),
+    SlideLayout.IMAGE_FULL: lambda s: bool(s.image_query and s.image_query.strip()),
+    SlideLayout.IMAGE_HERO: lambda s: bool(s.image_query and s.image_query.strip()),
+    SlideLayout.TEAM:       lambda s: bool(s.team_members),
+    SlideLayout.COMPETITION: lambda s: bool(s.competition_table),
+}
+
+
+def _slide_has_required_content(slide: "Slide") -> bool:
+    check = _LAYOUT_REQUIRES.get(slide.layout)
+    if check is not None:
+        return check(slide)
+    return bool(
+        (slide.title and slide.title.strip()) or (slide.subtitle and slide.subtitle.strip())
+        or (slide.body_text and slide.body_text.strip()) or slide.bullets or slide.metrics
+        or slide.team_members or slide.timeline_items or slide.two_column or slide.competition_table
+        or (slide.image_query and slide.image_query.strip()) or (slide.mermaid_code and slide.mermaid_code.strip())
+    )
+
+
 class PresentationSchema(BaseModel):
     meta: PresentationMeta
     slides: list[Slide] = Field(..., min_length=5, max_length=20)
@@ -204,30 +250,21 @@ class PresentationSchema(BaseModel):
             slide.index = i
 
         # Наблюдали в проде (реальный сгенерированный PDF): модель иногда
-        # ставит layout на слайд ("two_column" и т.п.), но не заполняет НИ
-        # ОДНОГО поля, которое этот layout рисует — визуально пустая
-        # страница, кроме футера. title/closing не проверяем: их ветки в
-        # шаблоне статичны и не зависят от полей слайда. Поднимаем ошибку
-        # валидации вместо тихой отправки пустого слайда пользователю —
-        # generate_presentation_structure() уже оборачивает вызов LLM в
-        # @retry (tenacity, до 3 попыток), так что это ValueError уводит в
-        # повторный вызов модели, а не в готовый PDF с дырой.
+        # ставит layout на слайд, но не заполняет поле, которое этот layout
+        # реально рисует — title+subtitle есть, тело пустое. title/closing
+        # не проверяем: их ветки в шаблоне статичны и не зависят от полей
+        # слайда. Поднимаем ошибку валидации вместо тихой отправки пустого
+        # слайда пользователю — generate_presentation_structure() уже
+        # оборачивает вызов LLM в @retry (tenacity, до 3 попыток), так что
+        # это ValueError уводит в повторный вызов модели, а не в готовый
+        # PDF с дырой.
         for slide in slides:
             if slide.layout in (SlideLayout.TITLE, SlideLayout.CLOSING):
                 continue
-            has_content = (
-                (slide.title and slide.title.strip())
-                or (slide.subtitle and slide.subtitle.strip())
-                or (slide.body_text and slide.body_text.strip())
-                or slide.bullets or slide.metrics or slide.team_members
-                or slide.timeline_items or slide.two_column or slide.competition_table
-                or (slide.image_query and slide.image_query.strip())
-                or (slide.mermaid_code and slide.mermaid_code.strip())
-            )
-            if not has_content:
+            if not _slide_has_required_content(slide):
                 raise ValueError(
-                    f"Slide {slide.index} (layout={slide.layout.value}) has no "
-                    f"renderable content — the model picked a layout without filling any of its fields"
+                    f"Slide {slide.index} (layout={slide.layout.value}) is missing the "
+                    f"content that layout actually renders (title/subtitle alone isn't enough)"
                 )
 
         return slides
