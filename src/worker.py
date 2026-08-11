@@ -120,29 +120,35 @@ async def generate_presentation_job(
         presentation = await generate_presentation_structure(request)
 
         if request.presentation_type == PresentationType.DOKLAD:
+            # ВАЖНО: main.py/worker.py вызывают logging.basicConfig(level=INFO)
+            # без своего format= — стандартный форматтер "%(levelname)s:%(name)s:
+            # %(message)s" НЕ печатает extra={...}. Раньше диагностика уходила
+            # туда и молча пропадала из логов Railway (видно только голый текст
+            # предупреждения). Поэтому здесь всё нужное — прямо в тексте сообщения.
             expected_count = _default_slide_count(request.presentation_type)
             if presentation.slide_count != expected_count:
                 logger.warning(
-                    "DOKLAD: LLM returned fewer/more slides than the fixed narrative "
-                    "structure requires — likely response truncation (see max_tokens "
-                    "in generate_presentation_structure), slides past the cut come out "
-                    "with missing fields",
-                    extra={
-                        "job_id": job_id,
-                        "expected_slide_count": expected_count,
-                        "actual_slide_count": presentation.slide_count,
-                    },
+                    f"DOKLAD job={job_id}: LLM returned {presentation.slide_count} slides, "
+                    f"expected {expected_count} — likely response truncation (see max_tokens "
+                    f"in generate_presentation_structure), slides past the cut come out with "
+                    f"missing fields"
                 )
 
             unsupported = [s for s in presentation.slides if s.layout not in DOKLAD_SUPPORTED_LAYOUTS]
             if unsupported:
+                details = "; ".join(
+                    f"#{s.index} layout={s.layout.value} "
+                    f"title={s.title!r} subtitle={s.subtitle!r} "
+                    f"body_text_len={len(s.body_text) if s.body_text else 0} "
+                    f"bullets={len(s.bullets)} metrics={len(s.metrics)} "
+                    f"two_column={'yes' if s.two_column else 'no'} "
+                    f"timeline_items={len(s.timeline_items)}"
+                    for s in unsupported
+                )
                 logger.warning(
-                    "DOKLAD: LLM returned layout(s) outside templates/doklad catalog "
-                    "— rendered via the generic fallback block instead of a dedicated layout",
-                    extra={
-                        "job_id": job_id,
-                        "slides": [{"index": s.index, "layout": s.layout.value} for s in unsupported],
-                    },
+                    f"DOKLAD job={job_id}: LLM returned layout(s) outside the doklad "
+                    f"catalog — rendered via the generic fallback block instead of a "
+                    f"dedicated layout. {details}"
                 )
 
         # ФИО/группа докладчика — не от модели, а из профиля пользователя в
