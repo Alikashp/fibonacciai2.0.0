@@ -43,6 +43,11 @@ class User(Base):
         String(16), default="free", server_default="free"
     )
     presentations_count: Mapped[int] = mapped_column(Integer, default=0)
+    # ФИО докладчика / группа-организация — задаются в профиле бота (main.py),
+    # подставляются в PresentationMeta.author_name/author_group для DOKLAD
+    # (worker.py), а не заполняются моделью.
+    author_name: Mapped[str | None] = mapped_column(String(150))
+    author_group: Mapped[str | None] = mapped_column(String(150))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
