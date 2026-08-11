@@ -8,7 +8,8 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from config import settings
 from schemas.presentation import (
     PresentationSchema, UserRequest, PresentationType, AudienceType,
-    ContentVolume, ContentSourceType,
+    ContentVolume, ContentSourceType, Slide, SlideLayout, BulletPoint,
+    _slide_has_required_content,
 )
 
 logger = logging.getLogger(__name__)
@@ -204,10 +205,15 @@ metrics — 2-3 показателя. ПРЕДПОЧТИТЕЛЬНО проце�
   У каждого: value (например "44%"), label (2-4 слова), trend (короткое пояснение к цифре).
   НЕ используй, если у тебя нет реальных цифр. ЗАПРЕЩЕНО выдумывать числа ради этого layout.
 
-two_column — сравнение двух вещей: до/после, было/стало, в теории/на практике, подход А/подход Б.
-  Заполни left_title, right_title (название каждой стороны) и по 3 пункта в left_bullets/right_bullets.
-  right_preferred=true — только если правая сторона объективно предпочтительнее; при нейтральном сравнении false.
-  НЕ используй для простого списка.
+two_column — два параллельных блока по теме слайда. Это может быть:
+  • сравнение (до/после, было/стало, в теории/на практике, подход А/подход Б),
+  • ИЛИ два самостоятельных тезиса, раскрывающих разные грани одной темы
+    (например: «что фиксируем» / «кто отвечает», «внутренние причины» / «внешние причины»).
+  Заполни left_title и right_title — название каждого блока по смыслу,
+  и по 3 пункта в left_bullets и right_bullets.
+  right_preferred=true — ТОЛЬКО если это сравнение и правая сторона объективно предпочтительнее.
+  При двух равнозначных тезисах — false.
+  НЕ используй, если содержание не делится на две части естественно — тогда бери bullets.
 
 diagram — процесс, механизм, последовательность шагов.
   ОБЯЗАТЕЛЬНО mermaid_code, синтаксис graph LR (горизонтально), МАКСИМУМ 6 узлов.
@@ -238,11 +244,18 @@ arrow-up, arrow-right, help-circle, star, bolt, shield, refresh, link
 ПРАВИЛА ВЫБОРА:
 1. НЕ ставь два слайда с одинаковым layout подряд.
 2. НЕ используй один и тот же layout больше 3 раз за презентацию.
-3. За презентацию должно встретиться минимум 4 РАЗНЫХ layout помимо title и closing.
+3. Стремись использовать не менее 4 разных layout помимо title и closing —
+   но только там, где содержание это позволяет.
 4. Выбрал layout — заполни ВСЕ его обязательные поля. Слайд с выбранным layout и пустыми полями — грубая ошибка.
 5. Поле title заполняется НА КАЖДОМ слайде конкретной содержательной формулировкой по теме.
    "Как модель учится на примерах" — верно.
-   "Первая часть темы", "Вторая часть темы", "Ключевые тезисы", "Контекст", пустая строка — ошибка."""
+   "Первая часть темы", "Вторая часть темы", "Ключевые тезисы", "Контекст", пустая строка — ошибка.
+
+ПРИОРИТЕТ ПРАВИЛ: заполняемость важнее разнообразия.
+Если для layout нет реального содержания — НЕ выбирай его,
+даже если из-за этого разнообразие окажется меньше.
+Слайд с выбранным layout и пустыми полями — грубейшая ошибка,
+хуже, чем два похожих layout в одной презентации."""
 
 DOKLAD_NARRATIVE_TOPIC = """\
 СТРУКТУРА УЧЕБНОГО ДОКЛАДА (строго 9 слайдов):
@@ -502,6 +515,210 @@ def _build_user_prompt(request: UserRequest) -> str:
     )
 
 
+# ── Точечное дозаполнение пустых слайдов ────────────────────────────────────
+# Наблюдали в проде трижды подряд на одной и той же теме: модель ставит
+# layout на слайд (чаще всего two_column), но не заполняет поле, которое
+# этот layout реально рисует — слайд визуально пустой, кроме футера.
+# Жёсткая валидация с retry (пробовали раньше) оказалась хуже: модель может
+# СТАБИЛЬНО повторять один и тот же пустой слайд на всех 3 попытках подряд,
+# и пользователь не получает вообще ничего. Вместо этого — один маленький
+# точечный follow-up запрос ТОЛЬКО на недостающее поле конкретного слайда:
+# дешевле и надёжнее полной перегенерации, а если и он не удастся —
+# оставляем слайд как есть (тихо, без падения job'а).
+
+_LAYOUT_PATCH_INSTRUCTIONS: dict[SlideLayout, str] = {
+    SlideLayout.BULLETS: (
+        'Заполни "bullets": 3-4 пункта. У каждого: "text" — информационное '
+        'предложение с конкретикой, "subtitle" — название пункта (1-3 слова), '
+        '"icon" — одна из: file-text, list, check, alert-triangle, clock, calendar, '
+        'users, user, coin, chart-bar, target, bulb, search, settings, lock, '
+        'message-circle, folder, arrow-up, arrow-right, help-circle, star, bolt, '
+        'shield, refresh, link.'
+    ),
+    SlideLayout.WHY_NOW: (
+        'Заполни "bullets": 3-4 пункта, каждый — одно законченное предложение.'
+    ),
+    SlideLayout.METRICS: (
+        'Заполни "metrics": 2-3 показателя. У каждого: "value" (например "44%"), '
+        '"label" (2-4 слова), "trend" (короткое пояснение к цифре). '
+        'Используй правдоподобные для темы цифры, не выдумывай абсурдные значения.'
+    ),
+    SlideLayout.TWO_COLUMN: (
+        'Заполни "two_column": "left_title", "right_title" (название каждой '
+        'стороны сравнения) и по 3 пункта в "left_bullets"/"right_bullets" — '
+        'каждый пункт объект {"text": "..."}.'
+    ),
+    SlideLayout.DIAGRAM: (
+        'Заполни "mermaid_code" — валидный Mermaid, синтаксис "graph LR", '
+        'максимум 6 узлов, подписи узлов 1-3 слова. И "body_text" — '
+        '2-3 предложения, поясняющие логику процесса.'
+    ),
+    SlideLayout.QUOTE: (
+        'Заполни "body_text" — сильный тезис одним предложением. '
+        '"subtitle" — одно предложение, поясняющее, почему это так.'
+    ),
+    SlideLayout.TIMELINE: (
+        'Заполни "timeline_items": 4 этапа. У каждого: "date" (период), '
+        '"title" (2-4 слова), "description" (одно предложение).'
+    ),
+    SlideLayout.IMAGE_FULL: (
+        'Заполни "image_query" (на английском, для поиска фото) и "two_column" '
+        'с двумя сопоставленными блоками: "left_title"/"left_text" и '
+        '"right_title"/"right_text".'
+    ),
+    SlideLayout.IMAGE_HERO: (
+        'Заполни "image_query" (на английском), "body_text" (2 предложения) и '
+        '"bullets" — 2 коротких пункта, каждый объект {"text": "..."}.'
+    ),
+    SlideLayout.TEAM: (
+        'Заполни "team_members": 3-4 члена команды, у каждого "name", "role", '
+        '"gender" (male/female).'
+    ),
+    SlideLayout.COMPETITION: (
+        'Заполни "competition_table": "our_name", "competitors" (реальные '
+        'названия компаний), "features" (минимум 5 критериев сравнения).'
+    ),
+}
+
+_PATCH_JSON_EXAMPLES: dict[SlideLayout, str] = {
+    SlideLayout.BULLETS: '{"bullets": [{"text": "...", "subtitle": "...", "icon": "..."}]}',
+    SlideLayout.WHY_NOW: '{"bullets": [{"text": "..."}]}',
+    SlideLayout.METRICS: '{"metrics": [{"value": "...", "label": "...", "trend": "..."}]}',
+    SlideLayout.TWO_COLUMN: '{"two_column": {"left_title": "...", "right_title": "...", "left_bullets": [{"text": "..."}], "right_bullets": [{"text": "..."}]}}',
+    SlideLayout.DIAGRAM: '{"mermaid_code": "graph LR\\nA[...] --> B[...]", "body_text": "..."}',
+    SlideLayout.QUOTE: '{"body_text": "...", "subtitle": "..."}',
+    SlideLayout.TIMELINE: '{"timeline_items": [{"date": "...", "title": "...", "description": "..."}]}',
+    SlideLayout.IMAGE_FULL: '{"image_query": "...", "two_column": {"left_title": "...", "left_text": "...", "right_title": "...", "right_text": "..."}}',
+    SlideLayout.IMAGE_HERO: '{"image_query": "...", "body_text": "...", "bullets": [{"text": "..."}]}',
+    SlideLayout.TEAM: '{"team_members": [{"name": "...", "role": "...", "gender": "male"}]}',
+    SlideLayout.COMPETITION: '{"competition_table": {"our_name": "...", "competitors": [{"name": "..."}], "features": [{"name": "...", "values": {}}]}}',
+}
+
+
+# Layout'ы, для которых есть дешёвый локальный путь деградации в bullets
+# ДО обращения к LLM — просто перекладываем то, что реально пришло в других
+# полях, без выдумывания нового текста. Дешевле и быстрее второго вызова
+# модели; используется, только если исходный layout всё равно не прошёл
+# _slide_has_required_content (т.е. слайд и так уже "сломан").
+_DEGRADABLE_TO_BULLETS = (
+    SlideLayout.TWO_COLUMN, SlideLayout.METRICS, SlideLayout.DIAGRAM,
+    SlideLayout.IMAGE_HERO, SlideLayout.TIMELINE,
+)
+
+
+def _locally_degrade_slide(slide: Slide) -> Slide | None:
+    if slide.layout not in _DEGRADABLE_TO_BULLETS:
+        return None
+
+    bullets = list(slide.bullets)
+
+    if slide.layout == SlideLayout.TWO_COLUMN and slide.two_column:
+        tc = slide.two_column
+        bullets.extend(tc.left_bullets)
+        bullets.extend(tc.right_bullets)
+        if tc.left_text and tc.left_text.strip():
+            bullets.append(BulletPoint(text=tc.left_text.strip(), subtitle=tc.left_title))
+        if tc.right_text and tc.right_text.strip():
+            bullets.append(BulletPoint(text=tc.right_text.strip(), subtitle=tc.right_title))
+
+    # metrics/diagram/image_hero/timeline не содержат других текстовых полей,
+    # из которых можно честно собрать bullet — просто меняем layout на
+    # bullets, и если реально нечего сливать, ниже это увидит
+    # _slide_has_required_content и уйдёт на LLM-дозапрос уже как bullets.
+
+    degraded = slide.model_copy(update={"layout": SlideLayout.BULLETS, "bullets": bullets})
+    return degraded
+
+
+async def _patch_one_slide(request: UserRequest, slide: Slide) -> Slide:
+    instruction = _LAYOUT_PATCH_INSTRUCTIONS.get(slide.layout)
+    example = _PATCH_JSON_EXAMPLES.get(slide.layout)
+    if instruction is None or example is None:
+        raise ValueError(f"no patch instructions for layout={slide.layout.value}")
+
+    material_block = ""
+    if request.source_type != ContentSourceType.TOPIC and request.raw_text:
+        material_block = f'\nМАТЕРИАЛ (используй как источник фактов):\n{request.raw_text[:3000]}'
+
+    system_prompt = f"""\
+Ты дописываешь ОДИН слайд презентации, у которого не хватает содержания.
+Возвращай ТОЛЬКО валидный JSON без пояснений и markdown.
+
+Тема презентации: {request.topic}
+Аудитория: {request.audience.value}
+Язык: {request.language} — весь текст только на этом языке.{material_block}
+
+Этот слайд имеет layout="{slide.layout.value}"{f', заголовок "{slide.title}"' if slide.title else ""}{f', подзаголовок "{slide.subtitle}"' if slide.subtitle else ""}.
+{instruction}
+
+Верни JSON строго такой формы (реальный осмысленный контент по теме, не заглушки):
+{example}"""
+
+    response = await client.chat.completions.create(
+        model=settings.openai_model,
+        temperature=0.7,
+        max_tokens=800,
+        response_format={"type": "json_object"},
+        messages=[{"role": "system", "content": system_prompt}],
+    )
+    data = json.loads(response.choices[0].message.content)
+
+    merged = slide.model_dump(mode="json")
+    merged.update({k: v for k, v in data.items() if k in Slide.model_fields})
+    patched = Slide.model_validate(merged)
+    patched.index = slide.index
+    patched.layout = slide.layout
+    return patched
+
+
+async def _patch_empty_slides(request: UserRequest, presentation: PresentationSchema) -> PresentationSchema:
+    gaps = [
+        s for s in presentation.slides
+        if s.layout not in (SlideLayout.TITLE, SlideLayout.CLOSING)
+        and not _slide_has_required_content(s)
+    ]
+    if not gaps:
+        return presentation
+
+    slides = list(presentation.slides)
+    for slide in gaps:
+        # Сначала дешёвая локальная деградация (без вызова LLM) — только
+        # перекладывает то, что реально уже пришло в других полях слайда.
+        # Если этого хватило — точечный запрос к модели не нужен вообще.
+        degraded = _locally_degrade_slide(slide)
+        working = degraded if degraded is not None else slide
+
+        if degraded is not None and _slide_has_required_content(working):
+            slides[slide.index - 1] = working
+            logger.info(
+                f"Locally degraded slide #{slide.index} from layout={slide.layout.value} "
+                f"to bullets without an extra LLM call — salvaged {len(working.bullets)} bullet(s)"
+            )
+            continue
+
+        try:
+            patched = await _patch_one_slide(request, working)
+            if _slide_has_required_content(patched):
+                slides[slide.index - 1] = patched
+                logger.info(
+                    f"Patched empty slide #{slide.index} (layout={patched.layout.value}, "
+                    f"originally {slide.layout.value})"
+                )
+            else:
+                logger.warning(
+                    f"Patch attempt for slide #{slide.index} (layout={patched.layout.value}, "
+                    f"originally {slide.layout.value}) still came back without the required "
+                    f"content — leaving as-is"
+                )
+        except Exception as e:
+            logger.warning(
+                f"Failed to patch empty slide #{slide.index} (layout={working.layout.value}, "
+                f"originally {slide.layout.value}): {e}"
+            )
+
+    return presentation.model_copy(update={"slides": slides})
+
+
 def _default_slide_count(presentation_type: PresentationType) -> int:
     defaults = {
         PresentationType.PITCH_DECK:  11,
@@ -575,4 +792,7 @@ async def generate_presentation_structure(request: UserRequest) -> PresentationS
         "slide_count": presentation.slide_count,
         "title": presentation.meta.title[:50],
     })
+
+    presentation = await _patch_empty_slides(request, presentation)
+
     return presentation
