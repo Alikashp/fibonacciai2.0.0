@@ -128,6 +128,8 @@ body{
 .dk-d-title{font-family:'Outfit',sans-serif;font-size:16px;font-weight:800;color:var(--text-main)}
 .dk-d-sub{font-size:11.5px;color:var(--text-mute);margin-top:6px}
 .dk-d-canvas{flex:1;display:flex;align-items:center;justify-content:center;padding:0 24px;overflow:hidden;min-height:0}
+.dk-d-canvas .mermaid{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.dk-d-canvas .mermaid svg{width:100%;height:100%}
 .dk-d-caption{font-size:11.5px;color:var(--text-body);text-align:center;padding:0 44px 8px;line-height:1.4}
 
 /* ══ QUOTE / STATEMENT ══ */
@@ -449,6 +451,36 @@ mermaid.initialize({
   </div>
   {% endif %}
 </div>
+
+{% else %}
+{# Слайд с layout вне каталога DOKLAD (например модель вернула "problem"/
+   "market"/"team" из общей схемы, которую этот шаблон не рисует) — раньше
+   такой слайд рендерился совсем пустым, кроме футера. Показываем то, что
+   реально есть в данных, вместо тишины. #}
+<div class="dk-b-head">
+  {% if slide.title %}<div class="dk-b-title">{{ slide.title }}</div>{% endif %}
+  {% if slide.subtitle %}<div class="dk-b-sub">{{ slide.subtitle }}</div>{% endif %}
+</div>
+<div class="dk-concl-list">
+  {% if slide.body_text %}<div class="dk-concl-text">{{ slide.body_text }}</div>{% endif %}
+  {% for bullet in slide.bullets %}
+  <div class="dk-concl-item">
+    <div class="dk-concl-num">·</div>
+    <div class="dk-concl-text">{{ bullet.text }}</div>
+  </div>
+  {% endfor %}
+  {% if slide.metrics %}
+  <div class="dk-m-row" style="flex:none">
+    {% for m in slide.metrics %}
+    <div class="dk-m-col">
+      <div class="dk-m-val">{{ m.value }}</div>
+      {% if m.label %}<div class="dk-m-label">{{ m.label }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+<div class="ft"><div class="ftb">Fibonacci.</div><div class="ftn">{{ slide.index }} / {{ slides|length }}</div></div>
 
 {% endif %}
 </div>
