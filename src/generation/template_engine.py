@@ -13,7 +13,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from schemas.presentation import PresentationSchema, PresentationType, ContentSourceType, Slide, SlideLayout
+from schemas.presentation import PresentationSchema, PresentationType, Slide, SlideLayout
 from layouts.zones import get_zones
 
 logger = logging.getLogger(__name__)
@@ -30,32 +30,14 @@ TEMPLATE_MAP: dict[PresentationType, str] = {
     PresentationType.SALES:        "pitch_deck",
     PresentationType.CONFERENCE:   "conference",
     PresentationType.ROADMAP:      "pitch_deck",
-    # DOKLAD не смотрит сюда напрямую — см. _pick_template_folder(): для него
-    # шаблон выбирается по source_type запроса, а не по presentation_type.
-    PresentationType.DOKLAD:       "conference",
-}
-
-# DOKLAD — единственный тип, где шаблон определяется не presentation_type,
-# а source_type исходного запроса: "с нуля по теме" выглядит как доклад
-# (conference), "по готовому материалу" — как отчёт по проделанной работе
-# (corp_report). См. Sprint: "Задача 1. Новый тип DOKLAD с веткой по source_type".
-DOKLAD_TEMPLATE_BY_SOURCE: dict[ContentSourceType, str] = {
-    ContentSourceType.TOPIC:    "conference",
-    ContentSourceType.TEXT:     "corp_report",
-    ContentSourceType.DOCUMENT: "corp_report",
-    ContentSourceType.URL:      "corp_report",
+    # DOKLAD раньше смотрел на conference/corp_report в зависимости от
+    # source_type запроса — теперь у него собственный шаблон независимо от
+    # source_type (см. templates/doklad/template.html).
+    PresentationType.DOKLAD:       "doklad",
 }
 
 
-def _pick_template_folder(
-    presentation_type: PresentationType,
-    source_type: ContentSourceType | None,
-) -> str:
-    if presentation_type == PresentationType.DOKLAD:
-        return DOKLAD_TEMPLATE_BY_SOURCE.get(
-            source_type or ContentSourceType.TOPIC,
-            "conference",
-        )
+def _pick_template_folder(presentation_type: PresentationType) -> str:
     return TEMPLATE_MAP.get(presentation_type, "pitch_deck")
 
 
@@ -105,7 +87,6 @@ def render_presentation(
     team_photo_urls: dict[str, str] | None = None,
     watermark: bool = False,
     color_scheme: str = "light",
-    source_type: ContentSourceType | None = None,
 ) -> str:
     """
     Рендерит HTML из схемы презентации.
@@ -115,15 +96,11 @@ def render_presentation(
         image_urls:       {slide.index: url} — URL изображений от Unsplash/Pexels/Replicate
         team_photo_urls:  {member.name: url} — фото членов команды
         watermark:        Добавить водяной знак (freemium)
-        source_type:      Источник исходного запроса (UserRequest.source_type).
-                           Используется только для PresentationType.DOKLAD, где
-                           именно source_type, а не presentation_type, решает,
-                           какой шаблон (conference/corp_report) выбрать.
 
     Returns:
         HTML-строка, готовая к передаче в Playwright
     """
-    template_folder = _pick_template_folder(presentation.meta.presentation_type, source_type)
+    template_folder = _pick_template_folder(presentation.meta.presentation_type)
 
     env = _get_env(template_folder)
     template = env.get_template("template.html")
