@@ -53,6 +53,7 @@ class SlideLayout(str, Enum):
     DIAGRAM      = "diagram"
     QUOTE        = "quote"
     IMAGE_FULL   = "image_full"
+    IMAGE_HERO   = "image_hero"
     CLOSING      = "closing"
 
 
@@ -63,9 +64,34 @@ class MetricItem(BaseModel):
     source: Optional[str] = Field(None, max_length=400)
 
 
+# Закрытый список допустимых иконок (Tabler Icons) для BulletPoint.icon —
+# только эти имена (без префикса "ti-") реально подключены self-hosted
+# webfont'ом в templates/doklad/template.html. Всё остальное, включая
+# отсутствие поля, схлопывается в нейтральную точку — см. validate_icon.
+ALLOWED_BULLET_ICONS = frozenset({
+    "file-text", "list", "check", "alert-triangle", "clock", "calendar",
+    "users", "user", "coin", "chart-bar", "target", "bulb", "search",
+    "settings", "lock", "message-circle", "folder", "arrow-up",
+    "arrow-right", "help-circle", "star", "bolt", "shield", "refresh",
+    "link",
+})
+FALLBACK_BULLET_ICON = "point"
+
+
 class BulletPoint(BaseModel):
     text: str = Field(..., max_length=400)
+    subtitle: Optional[str] = Field(None, max_length=80)
+    icon: Optional[str] = Field(None, max_length=40)
     emphasis: bool = False
+
+    @field_validator("icon")
+    @classmethod
+    def validate_icon(cls, v):
+        if v is None:
+            return v
+        if v not in ALLOWED_BULLET_ICONS:
+            return FALLBACK_BULLET_ICON
+        return v
 
 
 class TeamMember(BaseModel):
@@ -90,6 +116,7 @@ class TwoColumnContent(BaseModel):
     right_title: Optional[str] = Field(None, max_length=100)
     right_text: Optional[str] = Field(None, max_length=500)
     right_bullets: list[BulletPoint] = Field(default_factory=list, max_length=6)
+    right_preferred: bool = False
 
     @field_validator("left_bullets", "right_bullets", mode="before")
     @classmethod
@@ -156,6 +183,10 @@ class PresentationMeta(BaseModel):
     presentation_type: PresentationType
     audience: AudienceType
     color_scheme: str = "default"
+    # ФИО докладчика / группа-организация — НЕ заполняются моделью, а
+    # подставляются в worker.py из настроек пользователя в боте (профиль).
+    author_name: Optional[str] = None
+    author_group: Optional[str] = None
 
 
 class PresentationSchema(BaseModel):
