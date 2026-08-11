@@ -31,7 +31,7 @@ from aiogram.types import BufferedInputFile, InlineKeyboardButton, InlineKeyboar
 from arq.connections import RedisSettings
 
 from config import settings
-from schemas.presentation import UserRequest, PresentationType
+from schemas.presentation import UserRequest, PresentationType, SlideLayout
 from generation.content_extractor import extract_from_document, extract_from_url
 from generation.llm import generate_presentation_structure
 from generation.image_fetcher import fetch_images_for_slides
@@ -45,6 +45,19 @@ logger = logging.getLogger(__name__)
 
 JOB_TIMEOUT_SECONDS = 180  # LLM + картинки + PDF с запасом; см. WorkerSettings.job_timeout
 MAX_CONCURRENT_JOBS = 5    # нагрузочный критерий Sprint 1: 5 параллельных не блокируют бота
+
+# Layout'ы, которые реально умеет рисовать templates/doklad/template.html
+# (см. LAYOUT_CATALOG в llm.py). SlideLayout — общий enum на все типы
+# презентаций, так что модель технически может вернуть "problem"/"market"/
+# "team"/"competition"/"why_now" — их шаблон не рисует. Сам шаблон на такой
+# случай не остаётся пустым (см. {% else %} в template.html), но нам нужно
+# видеть в логах, если модель всё же выходит за пределы каталога.
+DOKLAD_SUPPORTED_LAYOUTS = frozenset({
+    SlideLayout.TITLE, SlideLayout.BULLETS, SlideLayout.METRICS,
+    SlideLayout.TWO_COLUMN, SlideLayout.DIAGRAM, SlideLayout.QUOTE,
+    SlideLayout.TIMELINE, SlideLayout.IMAGE_FULL, SlideLayout.IMAGE_HERO,
+    SlideLayout.CLOSING,
+})
 
 
 def _kb_after_pdf() -> InlineKeyboardMarkup:
@@ -105,6 +118,18 @@ async def generate_presentation_job(
 
         await _status("⚙️ Пишу текст слайдов...")
         presentation = await generate_presentation_structure(request)
+
+        if request.presentation_type == PresentationType.DOKLAD:
+            unsupported = [s for s in presentation.slides if s.layout not in DOKLAD_SUPPORTED_LAYOUTS]
+            if unsupported:
+                logger.warning(
+                    "DOKLAD: LLM returned layout(s) outside templates/doklad catalog "
+                    "— rendered via the generic fallback block instead of a dedicated layout",
+                    extra={
+                        "job_id": job_id,
+                        "slides": [{"index": s.index, "layout": s.layout.value} for s in unsupported],
+                    },
+                )
 
         # ФИО/группа докладчика — не от модели, а из профиля пользователя в
         # боте (см. main.py, "👤 Профиль"). Только для DOKLAD: это единственный
