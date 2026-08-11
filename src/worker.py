@@ -179,7 +179,7 @@ async def generate_presentation_job(
 
         await _status("⚙️ Рендерю PDF...")
         has_mermaid = any(s.layout.value == "diagram" for s in presentation.slides)
-        pdf_bytes = await html_to_pdf(html, has_mermaid=has_mermaid)
+        pdf_bytes = await html_to_pdf(html, has_mermaid=has_mermaid, expected_pages=presentation.slide_count)
 
         await upload_pdf(job_id, pdf_bytes)
 
