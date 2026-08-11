@@ -545,7 +545,13 @@ async def generate_presentation_structure(request: UserRequest) -> PresentationS
     response = await client.chat.completions.create(
         model=settings.openai_model,
         temperature=0.7,
-        max_tokens=4500,
+        # 4500 хватало на старую структуру, но DOKLAD теперь пишет subtitle+icon
+        # на КАЖДЫЙ bullet и лимиты полей выросли (bullets/metrics.source и
+        # т.д.) — в json_object-режиме модель при нехватке бюджета не ломает
+        # синтаксис, а тихо обрезает слайды/поля в конце, чтобы закрыть JSON
+        # корректно. Из-за этого "строго 9 слайдов" превращалось в 8 без
+        # ошибки парсинга — см. лог с slide_count=8.
+        max_tokens=8000,
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": system_prompt},
