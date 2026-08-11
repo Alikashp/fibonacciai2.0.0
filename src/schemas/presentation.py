@@ -190,12 +190,17 @@ class PresentationMeta(BaseModel):
 
 
 def _has_two_column_content(slide: "Slide") -> bool:
+    # ВАЖНО: только left_bullets/right_bullets — именно их рендерит
+    # templates/doklad/template.html для layout="two_column" (left_text/
+    # right_text там не используются вовсе, это поля layout="image_full").
+    # Слайд с заполненными только left_text/right_text и пустыми bullets
+    # раньше проходил эту проверку как "есть контент", хотя на странице
+    # были бы видны только заголовки колонок без единого пункта — и, что
+    # важнее, никогда не доходил до _locally_degrade_slide() в llm.py,
+    # которая как раз умеет спасти такой слайд, слив left_text/right_text
+    # в bullets.
     tc = slide.two_column
-    return bool(tc) and bool(
-        tc.left_bullets or tc.right_bullets
-        or (tc.left_text and tc.left_text.strip())
-        or (tc.right_text and tc.right_text.strip())
-    )
+    return bool(tc) and bool(tc.left_bullets or tc.right_bullets)
 
 
 # Требование к КОНКРЕТНОМУ полю, которое реально рисует каждый layout —
