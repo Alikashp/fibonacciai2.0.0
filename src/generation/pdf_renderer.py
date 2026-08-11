@@ -112,13 +112,23 @@ class PDFRenderer:
         finally:
             await context.close()
 
-    async def render(self, html: str, has_mermaid: bool = False) -> bytes:
+    async def render(self, html: str, has_mermaid: bool = False, expected_pages: int | None = None) -> bytes:
         """
         Рендерит HTML в PDF.
 
         Args:
-            html:         Полный HTML-документ (из template_engine.render_presentation)
-            has_mermaid:  True если есть diagram-слайды — ждём Mermaid.js
+            html:           Полный HTML-документ (из template_engine.render_presentation)
+            has_mermaid:    True если есть diagram-слайды — ждём Mermaid.js
+            expected_pages: Точное число слайдов (len(presentation.slides)). Chromium
+                             паджинирует весь документ по фиксированной высоте страницы
+                             (width/height ниже), а не по границам .slide — если реальная
+                             высота контента хоть на доли пикселя превышает ровное кратное
+                             446px (из-за метрик реального веб-шрифта, которых при рендере
+                             могло не быть при вёрстке), в конец PDF добавляется лишняя
+                             пустая страница. Воспроизведено на реальном PDF пользователя:
+                             9 слайдов → 10 физических страниц, 10-я пустая. page_ranges
+                             жёстко обрезает вывод до реального числа слайдов независимо
+                             от точной причины переполнения.
 
         Returns:
             PDF как bytes
@@ -163,6 +173,7 @@ class PDFRenderer:
                     "bottom": "0",
                     "left": "0",
                 },
+                page_ranges=f"1-{expected_pages}" if expected_pages else None,
             )
 
         elapsed = time.monotonic() - start_time
@@ -248,20 +259,22 @@ async def html_to_pdf(
     html: str,
     has_mermaid: bool = False,
     output_path: Path | None = None,
+    expected_pages: int | None = None,
 ) -> bytes:
     """
     Главная функция: HTML → PDF bytes.
 
     Args:
-        html:         HTML от template_engine
-        has_mermaid:  Есть ли diagram-слайды
-        output_path:  Если задан — сохраняет PDF на диск (для дебага)
+        html:           HTML от template_engine
+        has_mermaid:    Есть ли diagram-слайды
+        output_path:    Если задан — сохраняет PDF на диск (для дебага)
+        expected_pages: len(presentation.slides) — см. PDFRenderer.render()
 
     Returns:
         PDF как bytes (для записи в S3)
     """
     renderer = await get_renderer()
-    pdf_bytes = await renderer.render(html, has_mermaid=has_mermaid)
+    pdf_bytes = await renderer.render(html, has_mermaid=has_mermaid, expected_pages=expected_pages)
 
     if output_path:
         output_path.parent.mkdir(parents=True, exist_ok=True)
