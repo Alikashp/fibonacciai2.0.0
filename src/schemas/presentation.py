@@ -202,6 +202,34 @@ class PresentationSchema(BaseModel):
             slides[-1].layout = SlideLayout.CLOSING
         for i, slide in enumerate(slides, start=1):
             slide.index = i
+
+        # Наблюдали в проде (реальный сгенерированный PDF): модель иногда
+        # ставит layout на слайд ("two_column" и т.п.), но не заполняет НИ
+        # ОДНОГО поля, которое этот layout рисует — визуально пустая
+        # страница, кроме футера. title/closing не проверяем: их ветки в
+        # шаблоне статичны и не зависят от полей слайда. Поднимаем ошибку
+        # валидации вместо тихой отправки пустого слайда пользователю —
+        # generate_presentation_structure() уже оборачивает вызов LLM в
+        # @retry (tenacity, до 3 попыток), так что это ValueError уводит в
+        # повторный вызов модели, а не в готовый PDF с дырой.
+        for slide in slides:
+            if slide.layout in (SlideLayout.TITLE, SlideLayout.CLOSING):
+                continue
+            has_content = (
+                (slide.title and slide.title.strip())
+                or (slide.subtitle and slide.subtitle.strip())
+                or (slide.body_text and slide.body_text.strip())
+                or slide.bullets or slide.metrics or slide.team_members
+                or slide.timeline_items or slide.two_column or slide.competition_table
+                or (slide.image_query and slide.image_query.strip())
+                or (slide.mermaid_code and slide.mermaid_code.strip())
+            )
+            if not has_content:
+                raise ValueError(
+                    f"Slide {slide.index} (layout={slide.layout.value}) has no "
+                    f"renderable content — the model picked a layout without filling any of its fields"
+                )
+
         return slides
 
     @property
