@@ -33,7 +33,7 @@ from arq.connections import RedisSettings
 from config import settings
 from schemas.presentation import UserRequest, PresentationType, SlideLayout
 from generation.content_extractor import extract_from_document, extract_from_url
-from generation.llm import generate_presentation_structure
+from generation.llm import generate_presentation_structure, _default_slide_count
 from generation.image_fetcher import fetch_images_for_slides
 from generation.template_engine import render_presentation
 from generation.pdf_renderer import html_to_pdf, get_renderer, shutdown_renderer
@@ -120,6 +120,20 @@ async def generate_presentation_job(
         presentation = await generate_presentation_structure(request)
 
         if request.presentation_type == PresentationType.DOKLAD:
+            expected_count = _default_slide_count(request.presentation_type)
+            if presentation.slide_count != expected_count:
+                logger.warning(
+                    "DOKLAD: LLM returned fewer/more slides than the fixed narrative "
+                    "structure requires — likely response truncation (see max_tokens "
+                    "in generate_presentation_structure), slides past the cut come out "
+                    "with missing fields",
+                    extra={
+                        "job_id": job_id,
+                        "expected_slide_count": expected_count,
+                        "actual_slide_count": presentation.slide_count,
+                    },
+                )
+
             unsupported = [s for s in presentation.slides if s.layout not in DOKLAD_SUPPORTED_LAYOUTS]
             if unsupported:
                 logger.warning(
