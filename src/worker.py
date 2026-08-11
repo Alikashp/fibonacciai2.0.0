@@ -134,21 +134,48 @@ async def generate_presentation_job(
                     f"missing fields"
                 )
 
-            unsupported = [s for s in presentation.slides if s.layout not in DOKLAD_SUPPORTED_LAYOUTS]
-            if unsupported:
-                details = "; ".join(
+            def _slide_debug(s) -> str:
+                return (
                     f"#{s.index} layout={s.layout.value} "
                     f"title={s.title!r} subtitle={s.subtitle!r} "
                     f"body_text_len={len(s.body_text) if s.body_text else 0} "
                     f"bullets={len(s.bullets)} metrics={len(s.metrics)} "
                     f"two_column={'yes' if s.two_column else 'no'} "
-                    f"timeline_items={len(s.timeline_items)}"
-                    for s in unsupported
+                    f"timeline_items={len(s.timeline_items)} "
+                    f"mermaid_code={'yes' if s.mermaid_code else 'no'} "
+                    f"image_query={s.image_query!r}"
                 )
+
+            unsupported = [s for s in presentation.slides if s.layout not in DOKLAD_SUPPORTED_LAYOUTS]
+            if unsupported:
                 logger.warning(
                     f"DOKLAD job={job_id}: LLM returned layout(s) outside the doklad "
                     f"catalog — rendered via the generic fallback block instead of a "
-                    f"dedicated layout. {details}"
+                    f"dedicated layout. " + "; ".join(_slide_debug(s) for s in unsupported)
+                )
+
+            # Слайд может иметь ПОДДЕРЖИВАЕМЫЙ layout (прошёл проверку выше) и
+            # всё равно оказаться визуально пустым, если модель не заполнила
+            # ни одного поля, которое реально рисует эта ветка шаблона — ровно
+            # так вышло со слайдом 3 в реальном PDF пользователя (layout прошёл
+            # молча, полей не было вообще). title/closing не проверяем — они
+            # по дизайну не зависят от полей слайда (title.value == "title"/
+            # "closing" всегда что-то показывает).
+            empty_slides = [
+                s for s in presentation.slides
+                if s.layout not in (SlideLayout.TITLE, SlideLayout.CLOSING)
+                and not (
+                    (s.title and s.title.strip()) or (s.subtitle and s.subtitle.strip())
+                    or (s.body_text and s.body_text.strip()) or s.bullets or s.metrics
+                    or s.timeline_items or s.two_column
+                    or (s.mermaid_code and s.mermaid_code.strip())
+                )
+            ]
+            if empty_slides:
+                logger.warning(
+                    f"DOKLAD job={job_id}: slide(s) have a supported layout but no "
+                    f"renderable fields at all — will show as a blank page apart from "
+                    f"the footer. " + "; ".join(_slide_debug(s) for s in empty_slides)
                 )
 
         # ФИО/группа докладчика — не от модели, а из профиля пользователя в
